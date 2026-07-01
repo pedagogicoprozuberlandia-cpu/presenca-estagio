@@ -178,6 +178,14 @@ tr:hover td{background:#f8fafc}
 .reg-tab.done .tab-check{background:#5b21b6;color:white}
 .reg-panel{display:none}.reg-panel.active{display:block}
 
+/* ALUNOS LIST */
+.alunos-list{display:flex;flex-direction:column;gap:8px}
+.aluno-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;flex-wrap:wrap}
+.aluno-row-info{flex:1;min-width:0}
+.aluno-row-nome{font-size:14px;font-weight:700;color:#1a202c;margin-bottom:3px}
+.aluno-row-detail{font-size:12px;color:#64748b;line-height:1.5}
+.aluno-row-btns{display:flex;gap:6px;flex-shrink:0}
+
 /* MOBILE MENU */
 .btn-menu{display:none;background:rgba(255,255,255,0.2);border:none;color:white;font-size:20px;padding:6px 10px;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:50}
@@ -962,15 +970,20 @@ async function loadAlunos(){
   let rows=data;
   if(busca)rows=rows.filter(a=>a.nome.toLowerCase().includes(busca)||(a.turma&&a.turma.toLowerCase().includes(busca)));
   if(!rows.length){div.innerHTML='<div class="empty">Nenhum resultado.</div>';return;}
-  let h=`<table><thead><tr><th>Nome</th><th>Preceptor</th><th>Turno</th><th>Setor</th><th></th></tr></thead><tbody>`;
+  let h=`<div class="alunos-list">`;
   rows.forEach(a=>{
-    h+=`<tr><td style="font-weight:600">${a.nome}</td><td>${a.turma||'—'}</td><td>${a.campo||'—'}</td><td>${a.setor_fixo||'—'}</td>
-    <td style="display:flex;gap:6px">
-      <button class="btn btn-secondary btn-sm" onclick="openEditAluno(${a.id},'${a.nome.replace(/'/g,"\\'")}','${(a.turma||'').replace(/'/g,"\\'")}','${(a.campo||'').replace(/'/g,"\\'")}','${(a.setor_fixo||'').replace(/'/g,"\\'")}')">Editar</button>
-      <button class="btn btn-danger btn-sm" onclick="removeAluno(${a.id},'${a.nome.replace(/'/g,"\\'")}')">Remover</button>
-    </td></tr>`;
+    h+=`<div class="aluno-row">
+      <div class="aluno-row-info">
+        <div class="aluno-row-nome">${a.nome}</div>
+        <div class="aluno-row-detail">Preceptor: ${a.turma||'—'} · Turno: ${a.campo||'—'} · Setor: ${a.setor_fixo||'—'}</div>
+      </div>
+      <div class="aluno-row-btns">
+        <button class="btn btn-secondary btn-sm" onclick="openEditAluno(${a.id},'${a.nome.replace(/'/g,"\\'")}','${(a.turma||'').replace(/'/g,"\\'")}','${(a.campo||'').replace(/'/g,"\\'")}','${(a.setor_fixo||'').replace(/'/g,"\\'")}')">✏️ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="removeAluno(${a.id},'${a.nome.replace(/'/g,"\\'")}')">🗑️</button>
+      </div>
+    </div>`;
   });
-  h+='</tbody></table>';div.innerHTML=h;
+  h+=`</div>`;div.innerHTML=h;
 }
 
 function openEditAluno(id,nome,preceptor,turno,setor){
