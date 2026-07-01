@@ -300,7 +300,7 @@ tr:hover td{background:#f8fafc}
         <div class="card-title"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Dados do registro</div>
 
         <div class="form-grid three" style="margin-bottom:18px">
-          <div class="form-group"><label>Data do estágio</label><input type="date" id="r-data" onchange="ALUNOS_LANCADOS.clear();renderAlunosFiltrados();"/></div>
+          <div class="form-group"><label>Data do estágio</label><input type="date" id="r-data" onchange="carregarLancadosHoje();"/></div>
           <div class="form-group" style="grid-column:span 2">
             <label>Turno <span class="required-star">*</span></label>
             <div style="display:flex;gap:8px;margin-top:2px">
@@ -636,6 +636,7 @@ async function selectHospital(id){
 
   await refreshTudo();
   loadRegistros();
+  carregarLancadosHoje();
   goPage('presenca',document.querySelector('.nav-item'));
 }
 
@@ -677,7 +678,7 @@ function goPage(page,btn){
   if(page==='alunos')loadAlunos();
   if(page==='campos')loadCampos();
   if(page==='relatorio')loadRelatorio();
-  if(page==='presenca'){renderAlunosGrid();renderCamposGrid();loadRegistros();}
+  if(page==='presenca'){renderAlunosGrid();renderCamposGrid();loadRegistros();carregarLancadosHoje();}
 }
 
 async function refreshTudo(){
@@ -893,6 +894,18 @@ function setTurno(val){
 // IDs dos alunos já lançados hoje
 let ALUNOS_LANCADOS=new Set();
 
+async function carregarLancadosHoje(){
+  ALUNOS_LANCADOS.clear();
+  if(!sb)return;
+  const data=document.getElementById('r-data')?.value;
+  if(!data)return;
+  const{data:regs}=await sb.from(tbl('registros_presenca')).select('aluno_id').eq('data',data);
+  if(regs?.length){
+    regs.forEach(r=>ALUNOS_LANCADOS.add(r.aluno_id));
+  }
+  renderAlunosFiltrados();
+}
+
 async function addRegistro(){
   if(!sb)return;
   const data=document.getElementById('r-data').value;
@@ -923,10 +936,10 @@ async function addRegistro(){
   document.getElementById('r-campo-id').value='';
   document.getElementById('r-obs').value='';
   setSituacao('');
-  // NÃO resetar preceptor e turno — manter para facilitar próximos lançamentos
-  renderAlunosFiltrados();updateAcd();
   document.getElementById('campo-auto-info').style.display='none';
   document.getElementById('campo-auto-aviso').style.display='none';
+  await carregarLancadosHoje();
+  updateAcd();
   loadRegistros();
   if(erros>0&&ok===0){showAlert(`Todos os aluno(s) já têm registro nesta data.`,'error');}
   else if(erros>0){showAlert(`${ok} presença(s) registrada(s)! ${erros} já tinham registro nesta data.`);}
