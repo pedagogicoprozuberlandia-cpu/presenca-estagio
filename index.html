@@ -300,7 +300,7 @@ tr:hover td{background:#f8fafc}
         <div class="card-title"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Dados do registro</div>
 
         <div class="form-grid three" style="margin-bottom:18px">
-          <div class="form-group"><label>Data do estágio</label><input type="date" id="r-data"/></div>
+          <div class="form-group"><label>Data do estágio</label><input type="date" id="r-data" onchange="ALUNOS_LANCADOS.clear();renderAlunosFiltrados();"/></div>
           <div class="form-group" style="grid-column:span 2">
             <label>Turno <span class="required-star">*</span></label>
             <div style="display:flex;gap:8px;margin-top:2px">
@@ -781,25 +781,11 @@ function toggleAluno(id){
 function autoSetCampoPorAlunos(){
   const info=document.getElementById('campo-auto-info');
   const aviso=document.getElementById('campo-auto-aviso');
-  if(!ALUNOS_SEL.size){
-    info.style.display='none';aviso.style.display='none';
-    document.getElementById('r-campo-id').value='';
-    return;
-  }
-  const selecionados=ALUNOS.filter(a=>ALUNOS_SEL.has(a.id));
-  const setores=[...new Set(selecionados.map(a=>a.setor_fixo).filter(Boolean))];
-  if(setores.length===1){
-    const campoObj=CAMPOS.find(c=>c.nome===setores[0]);
-    if(campoObj){
-      document.getElementById('r-campo-id').value=campoObj.id;
-      document.getElementById('campo-auto-nome').textContent=campoObj.nome;
-      info.style.display='block';aviso.style.display='none';
-      return;
-    }
-  }
-  // sem setor definido ou setores diferentes
-  document.getElementById('r-campo-id').value='';
-  info.style.display='none';aviso.style.display='block';
+  // esconde os avisos — cada aluno tem seu próprio setor cadastrado
+  info.style.display='none';
+  aviso.style.display='none';
+  // seta um campo genérico para não falhar na validação (cada aluno usa o seu próprio setor_fixo)
+  document.getElementById('r-campo-id').value='auto';
 }
 
 function renderAlunosFiltrados(){
@@ -810,9 +796,14 @@ function renderAlunosFiltrados(){
   if(prec) lista=lista.filter(a=>a.turma===prec);
   if(turno) lista=lista.filter(a=>a.campo===turno);
   if(filtro) lista=lista.filter(a=>a.nome.toLowerCase().includes(filtro.toLowerCase()));
+  // esconder alunos que já foram lançados hoje
+  lista=lista.filter(a=>!ALUNOS_LANCADOS.has(a.id));
   lista=lista.sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
   const grid=document.getElementById('alunos-grid-reg');
-  if(!lista.length){grid.innerHTML='<div class="empty" style="padding:12px;font-size:13px">Nenhum aluno encontrado.</div>';atualizarSelInfo();return;}
+  if(!lista.length){
+    grid.innerHTML='<div class="empty" style="padding:12px;font-size:13px;color:#1a6b4a">✅ Todos os alunos já foram lançados hoje!</div>';
+    atualizarSelInfo();return;
+  }
   grid.innerHTML=lista.map(a=>`
     <div class="aluno-card${ALUNOS_SEL.has(a.id)?' selected':''}" data-id="${a.id}">
       <div class="ac-check">✓</div>
@@ -899,15 +890,16 @@ function setTurno(val){
   toggleAcd('preceptor');
 }
 
+// IDs dos alunos já lançados hoje
+let ALUNOS_LANCADOS=new Set();
+
 async function addRegistro(){
   if(!sb)return;
-  const campo_id=document.getElementById('r-campo-id').value;
   const data=document.getElementById('r-data').value;
   const turno=document.getElementById('r-turno').value;
   const situacao=document.getElementById('r-situacao').value;
   const observacao=document.getElementById('r-obs').value.trim();
   if(!ALUNOS_SEL.size){showAlert('Selecione pelo menos um aluno.','error');return;}
-  if(!campo_id){showAlert('Não foi possível identificar o campo de estágio dos alunos selecionados. Verifique o cadastro.','error');return;}
   if(!data){showAlert('Informe a data.','error');return;}
   if(!turno){showAlert('Selecione o turno.','error');return;}
   if(!situacao){showAlert('Marque a situação: Presente ou Ausente.','error');return;}
@@ -918,22 +910,23 @@ async function addRegistro(){
   for(const aluno_id of ALUNOS_SEL){
     const{data:dup}=await sb.from(tbl('registros_presenca')).select('id').eq('aluno_id',aluno_id).eq('data',data);
     if(dup?.length){erros++;continue;}
-    const{error}=await sb.from(tbl('registros_presenca')).insert({aluno_id,campo_id:campo_id||null,data,turno,situacao,observacao:observacao||null});
-    if(error){erros++;}else{ok++;}
+    // usar setor_fixo do próprio aluno como campo
+    const aluno=ALUNOS.find(a=>a.id===aluno_id);
+    const campoObj=CAMPOS.find(c=>c.nome===aluno?.setor_fixo);
+    const campo_id=campoObj?.id||null;
+    const{error}=await sb.from(tbl('registros_presenca')).insert({aluno_id,campo_id,data,turno,situacao,observacao:observacao||null});
+    if(error){erros++;}else{ok++;ALUNOS_LANCADOS.add(aluno_id);}
   }
   btn.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Registrar presença';
   btn.disabled=false;
   ALUNOS_SEL.clear();
   document.getElementById('r-campo-id').value='';
-  document.getElementById('r-preceptor-sel').value='';
   document.getElementById('r-obs').value='';
-  document.getElementById('r-turno').value='';
-  ['Manhã','Tarde','Noite','Integral'].forEach(t=>document.getElementById('turno-'+t).classList.remove('selected'));
   setSituacao('');
-  renderAlunosGrid('');renderCamposGrid();renderPreceptoresGrid();updateAcd();
+  // NÃO resetar preceptor e turno — manter para facilitar próximos lançamentos
+  renderAlunosFiltrados();updateAcd();
   document.getElementById('campo-auto-info').style.display='none';
   document.getElementById('campo-auto-aviso').style.display='none';
-  toggleAcd('preceptor');
   loadRegistros();
   if(erros>0&&ok===0){showAlert(`Todos os aluno(s) já têm registro nesta data.`,'error');}
   else if(erros>0){showAlert(`${ok} presença(s) registrada(s)! ${erros} já tinham registro nesta data.`);}
