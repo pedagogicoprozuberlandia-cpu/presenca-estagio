@@ -295,7 +295,7 @@ tr:hover td{background:#f8fafc}
     <!-- PAGE: PRESENÇA -->
     <div id="page-presenca" class="page active">
       <div class="page-title">Registrar Presença</div>
-      <div class="page-sub" id="sub-presenca">Selecione o campo, o aluno e marque a situação</div>
+      <div class="page-sub" id="sub-presenca">Selecione o setor, o aluno e marque a situação</div>
       <div class="card">
         <div class="card-title"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Dados do registro</div>
 
@@ -358,10 +358,10 @@ tr:hover td{background:#f8fafc}
 
           <!-- CAMPO (automático, oculto do preceptor) -->
           <div id="campo-auto-info" style="display:none;background:#ede9fe;border:1px solid #c4b5fd;border-radius:10px;padding:12px 16px;margin-top:8px;font-size:13px;color:#4c1d95">
-            <strong>📍 Campo de estágio:</strong> <span id="campo-auto-nome"></span>
+            <strong>📍 Setor de estágio:</strong> <span id="campo-auto-nome"></span>
           </div>
           <div id="campo-auto-aviso" style="display:none;background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:12px 16px;margin-top:8px;font-size:13px;color:#991b1b">
-            ⚠️ Os alunos selecionados não têm o mesmo campo de estágio cadastrado, ou não há campo cadastrado para eles. Avise a coordenação para completar o cadastro.
+            ⚠️ Os alunos selecionados não têm o mesmo setor de estágio cadastrado, ou não há campo cadastrado para eles. Avise a coordenação para completar o cadastro.
           </div>
           <div style="display:none">
             <div class="campos-grid" id="campos-grid"></div>
@@ -421,7 +421,7 @@ tr:hover td{background:#f8fafc}
           </div>
         </div>
         <div class="form-grid" style="max-width:340px">
-          <div class="form-group"><label>Campo de estágio (setor)</label>
+          <div class="form-group"><label>Setor de estágio</label>
             <select id="a-campo-sel">
               <option value="">— selecione —</option>
             </select>
@@ -440,19 +440,19 @@ tr:hover td{background:#f8fafc}
     <!-- PAGE: CAMPOS -->
     <div id="page-campos" class="page">
       <div class="page-title">Campos de Estágio</div>
-      <div class="page-sub" id="sub-campos">Cadastre os locais de campo</div>
+      <div class="page-sub" id="sub-campos">Cadastre os setores de estágio</div>
       <div class="card">
-        <div class="card-title"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Novo campo de estágio</div>
+        <div class="card-title"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Novo setor de estágio</div>
         <div class="form-grid" style="max-width:480px">
           <div class="form-group"><label>Nome do local <span class="required-star">*</span></label><input type="text" id="c-nome" placeholder="Ex: UTI, Clínica Médica, Pronto-socorro..."/></div>
         </div>
         <button class="btn btn-primary" onclick="addCampo()" id="btn-add-campo">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Cadastrar campo
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Cadastrar setor
         </button>
       </div>
       <div class="card">
         <div class="card-title">Campos cadastrados</div>
-        <div class="table-wrap" id="campos-table"><div class="empty">Nenhum campo cadastrado.</div></div>
+        <div class="table-wrap" id="campos-table"><div class="empty">Nenhum setor cadastrado.</div></div>
       </div>
     </div>
 
@@ -487,22 +487,23 @@ tr:hover td{background:#f8fafc}
     <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:10px;padding:16px;margin-bottom:16px">
       <p style="font-size:13px;font-weight:700;color:#4c1d95;margin-bottom:8px">📌 Como montar a planilha Excel:</p>
       <p style="font-size:13px;color:#4c1d95;line-height:1.8">
-        A planilha deve ter exatamente <strong>3 colunas</strong>, nesta ordem:<br>
+        A planilha deve ter exatamente <strong>4 colunas</strong>, nesta ordem:<br>
         <strong>Coluna A</strong> → Nome do aluno<br>
         <strong>Coluna B</strong> → Nome do preceptor<br>
-        <strong>Coluna C</strong> → Turno (Manhã, Tarde, Noite ou Integral)<br><br>
-        ⚠️ A <strong>primeira linha</strong> deve ser o cabeçalho (ex: Nome | Preceptor | Turno)<br>
+        <strong>Coluna C</strong> → Turno (Manhã, Tarde, Noite ou Integral)<br>
+        <strong>Coluna D</strong> → Setor de estágio<br><br>
+        ⚠️ A <strong>primeira linha</strong> deve ser o cabeçalho (ex: Nome | Preceptor | Turno | Setor)<br>
         ⚠️ Os alunos começam a partir da <strong>linha 2</strong>
       </p>
       <div style="background:#fff;border-radius:8px;padding:10px;margin-top:10px;font-size:12px;font-family:'Courier New',monospace;color:#374151">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;font-weight:700;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px">
-          <span>Nome</span><span>Preceptor</span><span>Turno</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;font-weight:700;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px">
+          <span>Nome</span><span>Preceptor</span><span>Turno</span><span>Setor</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
-          <span>Ana Silva</span><span>Dr. João</span><span>Manhã</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px">
+          <span>Ana Silva</span><span>Dr. João</span><span>Manhã</span><span>UTI</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
-          <span>Bruno Costa</span><span>Dra. Maria</span><span>Tarde</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px">
+          <span>Bruno Costa</span><span>Dra. Maria</span><span>Tarde</span><span>Clínica</span>
         </div>
       </div>
     </div>
@@ -577,7 +578,7 @@ tr:hover td{background:#f8fafc}
       </select>
     </div>
     <div class="form-group" style="margin-bottom:20px">
-      <label>Campo de estágio (setor)</label>
+      <label>Setor de estágio</label>
       <select id="edit-aluno-setor"><option value="">— selecione —</option></select>
     </div>
     <div class="modal-actions">
@@ -1152,28 +1153,50 @@ async function exportExcel(){
   if(!sb)return;
   showAlert('Gerando planilha...','info');
   const ak=tbl('alunos');const ck=tbl('campos_estagio');
-  const{data:regs}=await sb.from(tbl('registros_presenca')).select(`*, ${ak}(nome,turma), ${ck}(nome)`).order('data').order('id');
+  const{data:regs}=await sb.from(tbl('registros_presenca')).select(`*, ${ak}(nome,turma,campo,setor_fixo), ${ck}(nome)`).order('data').order('id');
   const{data:alunos}=await sb.from(tbl('alunos')).select('*').order('nome');
   if(!regs?.length){showAlert('Nenhum dado para exportar.','error');return;}
   const wb=XLSX.utils.book_new();
   const sit={P:'Presente',F:'Ausente'};
   const rows=regs.map(r=>{
     const[y,m,d]=r.data.split('-');
-    return{'Hospital':HOSPITAL.nome,'Data':`${d}/${m}/${y}`,'Aluno':r[ak]?.nome||'','Preceptor':r[ak]?.turma||'','Campo':r[ck]?.nome||'','Turno':r.turno||'','Situação':sit[r.situacao]||r.situacao,'Observação':r.observacao||''};
+    const campoNome=r[ck]?.nome||r[ak]?.setor_fixo||'';
+    return{
+      'Hospital':HOSPITAL.nome,
+      'Data':`${d}/${m}/${y}`,
+      'Aluno':r[ak]?.nome||'',
+      'Preceptor':r[ak]?.turma||'',
+      'Turno':r[ak]?.campo||r.turno||'',
+      'Setor de estágio':campoNome,
+      'Situação':sit[r.situacao]||r.situacao,
+      'Observação':r.observacao||''
+    };
   });
   const ws1=XLSX.utils.json_to_sheet(rows);
-  ws1['!cols']=[{wch:22},{wch:12},{wch:32},{wch:24},{wch:20},{wch:10},{wch:12},{wch:40}];
+  ws1['!cols']=[{wch:14},{wch:12},{wch:32},{wch:24},{wch:10},{wch:24},{wch:12},{wch:40}];
   XLSX.utils.book_append_sheet(wb,ws1,'Registros');
+
   const relRows=(alunos||[]).map(a=>{
     const r=regs.filter(x=>x.aluno_id===a.id);
     const p=r.filter(x=>x.situacao==='P').length;
     const f=r.filter(x=>x.situacao==='F').length;
     const tot=r.length;
-    return{'Hospital':HOSPITAL.nome,'Aluno':a.nome,'Preceptor':a.turma||'','Total':tot,'Presenças':p,'Ausências':f,'Frequência (%)':tot?Math.round(p/tot*100):0};
+    return{
+      'Hospital':HOSPITAL.nome,
+      'Aluno':a.nome,
+      'Preceptor':a.turma||'',
+      'Turno':a.campo||'',
+      'Setor de estágio':a.setor_fixo||'',
+      'Total':tot,
+      'Presenças':p,
+      'Ausências':f,
+      'Frequência (%)':tot?Math.round(p/tot*100):0
+    };
   });
   const ws2=XLSX.utils.json_to_sheet(relRows);
-  ws2['!cols']=[{wch:22},{wch:32},{wch:24},{wch:8},{wch:12},{wch:12},{wch:14}];
+  ws2['!cols']=[{wch:14},{wch:32},{wch:24},{wch:10},{wch:24},{wch:8},{wch:12},{wch:12},{wch:14}];
   XLSX.utils.book_append_sheet(wb,ws2,'Relatório por aluno');
+
   const hoje=new Date();
   const hosp=HOSPITAL.id==='clara'?'SantaClara':'SaoGenoveva';
   const nome=`presenca_${hosp}_${hoje.getFullYear()}${String(hoje.getMonth()+1).padStart(2,'0')}${String(hoje.getDate()).padStart(2,'0')}.xlsx`;
@@ -1214,18 +1237,17 @@ document.addEventListener('DOMContentLoaded',()=>{
           return;
         }
         // validar turno
-        const turnosValidos=['Manhã','Tarde','Noite','Integral','manha','tarde','noite','integral'];
         const erros=[];
         importData=dados.map((r,i)=>{
           const nome=String(r[0]||'').trim();
           const preceptor=String(r[1]||'').trim();
           const turnoRaw=String(r[2]||'').trim();
-          // normalizar turno
+          const setor=String(r[3]||'').trim();
           const turnoMap={'manha':'Manhã','manhã':'Manhã','tarde':'Tarde','noite':'Noite','integral':'Integral'};
           const turno=turnoMap[turnoRaw.toLowerCase()]||turnoRaw;
           if(!nome)erros.push(`Linha ${i+2}: nome vazio`);
           if(!['Manhã','Tarde','Noite','Integral'].includes(turno))erros.push(`Linha ${i+2}: turno inválido ("${turnoRaw}") — use Manhã, Tarde, Noite ou Integral`);
-          return{nome,preceptor,turno};
+          return{nome,preceptor,turno,setor};
         });
         if(erros.length){
           document.getElementById('import-error').innerHTML='<strong>Erros encontrados:</strong><br>'+erros.join('<br>');
@@ -1235,10 +1257,9 @@ document.addEventListener('DOMContentLoaded',()=>{
           document.getElementById('import-error').style.display='none';
           document.getElementById('btn-import').style.display='inline-flex';
         }
-        // mostrar preview
         document.getElementById('import-preview-txt').textContent=`${importData.length} aluno(s) encontrado(s) para importar:`;
-        let h=`<table><thead><tr><th>Nome</th><th>Preceptor</th><th>Turno</th></tr></thead><tbody>`;
-        importData.forEach(a=>{h+=`<tr><td>${a.nome}</td><td>${a.preceptor||'—'}</td><td>${a.turno}</td></tr>`;});
+        let h=`<table><thead><tr><th>Nome</th><th>Preceptor</th><th>Turno</th><th>Campo</th></tr></thead><tbody>`;
+        importData.forEach(a=>{h+=`<tr><td>${a.nome}</td><td>${a.preceptor||'—'}</td><td>${a.turno}</td><td>${a.setor||'—'}</td></tr>`;});
         h+='</tbody></table>';
         document.getElementById('import-preview-table').innerHTML=h;
         document.getElementById('import-preview').style.display='block';
@@ -1255,7 +1276,7 @@ async function doImport(){
   if(!sb||!importData.length)return;
   const btn=document.getElementById('btn-import');
   btn.innerHTML='<span class="spinner"></span> Importando...';btn.disabled=true;
-  const registros=importData.map(a=>({nome:a.nome,turma:a.preceptor,campo:a.turno}));
+  const registros=importData.map(a=>({nome:a.nome,turma:a.preceptor,campo:a.turno,setor_fixo:a.setor||null}));
   const{error}=await sb.from(tbl('alunos')).insert(registros);
   btn.innerHTML='Importar alunos';btn.disabled=false;
   if(error){
