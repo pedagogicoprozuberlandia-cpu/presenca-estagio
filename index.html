@@ -12,6 +12,14 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh;color:#1a202c;touch-action:manipulation}
 
+/* VALIDAÇÃO */
+.field-error input,.field-error select,.field-error textarea{border-color:#dc2626!important;box-shadow:0 0 0 3px rgba(220,38,38,0.15)!important;animation:shake 0.3s ease}
+.field-error-msg{font-size:11px;color:#dc2626;font-weight:600;margin-top:4px;display:none}
+.field-error .field-error-msg{display:block}
+.acd-error{border-color:#dc2626!important}
+.acd-error .acd-header{background:#fee2e2!important}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
 /* HOSPITAL SELECTOR */
 #hospital-screen{position:fixed;inset:0;background:#f0f4f8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:24px}
 .hs-title{font-size:22px;font-weight:700;color:#1a202c;text-align:center}
@@ -305,8 +313,12 @@ tr:hover td{background:#f8fafc}
         <div class="card-title"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Dados do registro</div>
 
         <div class="form-grid three" style="margin-bottom:18px">
-          <div class="form-group"><label>Data do estágio</label><input type="date" id="r-data" onchange="carregarLancadosHoje();"/></div>
-          <div class="form-group" style="grid-column:span 2">
+          <div class="form-group" id="fg-data">
+            <label>Data do estágio <span class="required-star">*</span></label>
+            <input type="date" id="r-data" onchange="carregarLancadosHoje();clearError('fg-data')"/>
+            <span class="field-error-msg">Informe a data</span>
+          </div>
+          <div class="form-group" id="fg-turno" style="grid-column:span 2">
             <label>Turno <span class="required-star">*</span></label>
             <div style="display:flex;gap:8px;margin-top:2px">
               <button class="turno-btn" onclick="setTurno('Manhã')" id="turno-Manhã">🌅 Manhã</button>
@@ -315,6 +327,7 @@ tr:hover td{background:#f8fafc}
               <button class="turno-btn" onclick="setTurno('Integral')" id="turno-Integral">📅 Integral</button>
             </div>
             <input type="hidden" id="r-turno"/>
+            <span class="field-error-msg">Selecione o turno</span>
           </div>
         </div>
 
@@ -326,7 +339,7 @@ tr:hover td{background:#f8fafc}
             <div class="acd-header" id="acdh-preceptor" onclick="toggleAcd('preceptor')">
               <div class="acd-left">
                 <div class="acd-num" id="acdn-preceptor">1</div>
-                <span class="acd-label">Preceptor</span>
+                <span class="acd-label">Preceptor <span class="required-star">*</span></span>
                 <span class="acd-value" id="acdv-preceptor"></span>
               </div>
               <span class="acd-arrow">▼</span>
@@ -423,22 +436,34 @@ tr:hover td{background:#f8fafc}
       <div class="card">
         <div class="card-title"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Novo aluno</div>
         <div class="form-grid three">
-          <div class="form-group"><label>Nome completo <span class="required-star">*</span></label><input type="text" id="a-nome" placeholder="Nome do aluno"/></div>
+          <div class="form-group" id="fg-a-nome">
+            <label>Nome completo <span class="required-star">*</span></label>
+            <input type="text" id="a-nome" placeholder="Nome do aluno" oninput="clearError('fg-a-nome')"/>
+            <span class="field-error-msg">Informe o nome do aluno</span>
+          </div>
           <div class="form-group"><label>Preceptor responsável</label><input type="text" id="a-turma" placeholder="Nome do preceptor"/></div>
-          <div class="form-group"><label>Turno</label>
-            <select id="a-turno-sel">
+          <div class="form-group" id="fg-a-turno"><label>Turno <span class="required-star">*</span></label>
+            <select id="a-turno-sel" onchange="clearError('fg-a-turno')">
               <option value="">— selecione —</option>
               <option value="Manhã">🌅 Manhã</option>
               <option value="Tarde">🌤️ Tarde</option>
               <option value="Noite">🌙 Noite</option>
               <option value="Integral">📅 Integral</option>
             </select>
+            <span class="field-error-msg">Selecione o turno</span>
           </div>
         </div>
-        <div class="form-grid" style="max-width:340px">
+        <div class="form-grid" style="max-width:500px">
           <div class="form-group"><label>Setor de estágio</label>
             <select id="a-campo-sel">
               <option value="">— selecione —</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Escala</label>
+            <select id="a-escala">
+              <option value="todos">📅 Todos os dias</option>
+              <option value="impar">1️⃣ Dias ímpares</option>
+              <option value="par">2️⃣ Dias pares</option>
             </select>
           </div>
         </div>
@@ -502,23 +527,27 @@ tr:hover td{background:#f8fafc}
     <div style="background:#ede9fe;border:1px solid #c4b5fd;border-radius:10px;padding:16px;margin-bottom:16px">
       <p style="font-size:13px;font-weight:700;color:#4c1d95;margin-bottom:8px">📌 Como montar a planilha Excel:</p>
       <p style="font-size:13px;color:#4c1d95;line-height:1.8">
-        A planilha deve ter exatamente <strong>4 colunas</strong>, nesta ordem:<br>
+        A planilha deve ter exatamente <strong>5 colunas</strong>, nesta ordem:<br>
         <strong>Coluna A</strong> → Nome do aluno<br>
         <strong>Coluna B</strong> → Nome do preceptor<br>
         <strong>Coluna C</strong> → Turno (Manhã, Tarde, Noite ou Integral)<br>
-        <strong>Coluna D</strong> → Setor de estágio<br><br>
-        ⚠️ A <strong>primeira linha</strong> deve ser o cabeçalho (ex: Nome | Preceptor | Turno | Setor)<br>
+        <strong>Coluna D</strong> → Setor de estágio<br>
+        <strong>Coluna E</strong> → Escala (todos, impar ou par)<br><br>
+        ⚠️ A <strong>primeira linha</strong> deve ser o cabeçalho (ex: Nome | Preceptor | Turno | Setor | Escala)<br>
         ⚠️ Os alunos começam a partir da <strong>linha 2</strong>
       </p>
       <div style="background:#fff;border-radius:8px;padding:10px;margin-top:10px;font-size:12px;font-family:'Courier New',monospace;color:#374151">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;font-weight:700;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px">
-          <span>Nome</span><span>Preceptor</span><span>Turno</span><span>Setor</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:4px;font-weight:700;border-bottom:1px solid #e2e8f0;padding-bottom:4px;margin-bottom:4px">
+          <span>Nome</span><span>Preceptor</span><span>Turno</span><span>Setor</span><span>Escala</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px">
-          <span>Ana Silva</span><span>Dr. João</span><span>Manhã</span><span>UTI</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:4px">
+          <span>Ana Silva</span><span>Dr. João</span><span>Manhã</span><span>UTI</span><span>impar</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px">
-          <span>Bruno Costa</span><span>Dra. Maria</span><span>Tarde</span><span>Clínica</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:4px">
+          <span>Bruno Costa</span><span>Dra. Maria</span><span>Tarde</span><span>Clínica</span><span>par</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:4px">
+          <span>Camila Ramos</span><span>Enf. Lúcia</span><span>Noite</span><span>PS</span><span>todos</span>
         </div>
       </div>
     </div>
@@ -592,9 +621,17 @@ tr:hover td{background:#f8fafc}
         <option value="Integral">📅 Integral</option>
       </select>
     </div>
-    <div class="form-group" style="margin-bottom:20px">
+    <div class="form-group" style="margin-bottom:14px">
       <label>Setor de estágio</label>
       <select id="edit-aluno-setor"><option value="">— selecione —</option></select>
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label>Escala</label>
+      <select id="edit-aluno-escala">
+        <option value="todos">📅 Todos os dias</option>
+        <option value="impar">1️⃣ Dias ímpares</option>
+        <option value="par">2️⃣ Dias pares</option>
+      </select>
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="document.getElementById('edit-aluno-overlay').classList.remove('open')">Cancelar</button>
@@ -696,6 +733,48 @@ function goPage(page,btn){
   if(page==='campos')loadCampos();
   if(page==='relatorio')loadRelatorio();
   if(page==='presenca'){renderAlunosGrid();renderCamposGrid();loadRegistros();carregarLancadosHoje();}
+}
+
+function clearError(id){
+  const el=document.getElementById(id);
+  if(el)el.classList.remove('field-error');
+}
+
+function showFieldError(id,msg){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.classList.add('field-error');
+  const msg_el=el.querySelector('.field-error-msg');
+  if(msg_el&&msg)msg_el.textContent=msg;
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function showAcdError(id){
+  const el=document.getElementById('acd-'+id);
+  if(el){el.classList.add('acd-error');toggleAcd(id);}
+}
+function clearAcdError(id){
+  const el=document.getElementById('acd-'+id);
+  if(el)el.classList.remove('acd-error');
+}
+function deveAparecerHoje(aluno, dataStr){
+  if(!aluno.escala || aluno.escala==='todos') return true;
+  const data = dataStr ? new Date(dataStr+'T12:00:00') : new Date();
+  const dia = data.getDate();
+  const mes = data.getMonth();
+  const ano = data.getFullYear();
+  const diasMesAnterior = new Date(ano, mes, 0).getDate();
+  const trocou = diasMesAnterior === 31;
+  let escalaMes = aluno.escala;
+  if(trocou) escalaMes = escalaMes === 'impar' ? 'par' : 'impar';
+  if(escalaMes === 'impar') return dia % 2 !== 0;
+  if(escalaMes === 'par') return dia % 2 === 0;
+  return true;
+}
+function escalaNome(e){
+  if(e==='impar') return '1️⃣ Ímpar';
+  if(e==='par') return '2️⃣ Par';
+  return '📅 Todos';
 }
 
 async function refreshTudo(){
@@ -824,7 +903,7 @@ function renderAlunosGrid(filtro=''){
 
 function toggleAluno(id){
   if(ALUNOS_SEL.has(id)){ALUNOS_SEL.delete(id);}
-  else{ALUNOS_SEL.add(id);}
+  else{ALUNOS_SEL.add(id);clearAcdError('aluno');}
   renderAlunosFiltrados();
   autoSetCampoPorAlunos();
   updateAcd();
@@ -848,7 +927,10 @@ function renderAlunosFiltrados(){
   if(prec) lista=lista.filter(a=>a.turma===prec);
   if(turno) lista=lista.filter(a=>a.campo===turno);
   if(filtro) lista=lista.filter(a=>a.nome.toLowerCase().includes(filtro.toLowerCase()));
-  // esconder alunos que já foram lançados hoje
+  // filtrar por escala (ímpar/par) baseado na data selecionada
+  const dataReg=document.getElementById('r-data')?.value||new Date().toISOString().split('T')[0];
+  lista=lista.filter(a=>deveAparecerHoje(a, dataReg));
+  // esconder alunos já lançados hoje
   lista=lista.filter(a=>!ALUNOS_LANCADOS.has(a.id));
   lista=lista.sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
   const grid=document.getElementById('alunos-grid-reg');
@@ -922,6 +1004,7 @@ function renderPreceptoresGrid(){
 }
 function selectPreceptor(nome){
   document.getElementById('r-preceptor-sel').value=nome;
+  clearAcdError('preceptor');
   renderPreceptoresGrid();updateAcd();
   ALUNOS_SEL.clear();
   document.getElementById('busca-aluno-reg').value='';
@@ -934,6 +1017,7 @@ function setTurno(val){
   ['Manhã','Tarde','Noite','Integral'].forEach(t=>{
     document.getElementById('turno-'+t).classList.toggle('selected',t===val);
   });
+  clearError('fg-turno');
   document.getElementById('r-preceptor-sel').value='';
   document.getElementById('r-aluno-id').value='';
   updateAcd();
@@ -963,11 +1047,18 @@ async function addRegistro(){
   const turno=document.getElementById('r-turno').value;
   const situacao=document.getElementById('r-situacao').value;
   const observacao=getObservacao();
-  if(!ALUNOS_SEL.size){showAlert('Selecione pelo menos um aluno.','error');return;}
-  if(!data){showAlert('Informe a data.','error');return;}
-  if(!turno){showAlert('Selecione o turno.','error');return;}
-  if(!situacao){showAlert('Marque a situação: Presente ou Ausente.','error');return;}
-  if(situacao==='F'&&!observacao){showAlert('Selecione a justificativa da ausência.','error');return;}
+  // limpar erros anteriores
+  ['fg-data','fg-turno'].forEach(clearError);
+  ['preceptor','aluno'].forEach(clearAcdError);
+
+  let valido=true;
+  if(!data){showFieldError('fg-data','Informe a data');valido=false;}
+  if(!turno){showFieldError('fg-turno','Selecione o turno');valido=false;}
+  if(!ALUNOS_SEL.size){showAcdError('aluno');showAlert('Selecione pelo menos um aluno.','error');valido=false;}
+  if(!document.getElementById('r-preceptor-sel').value){showAcdError('preceptor');if(valido)showAlert('Selecione o preceptor.','error');valido=false;}
+  if(!situacao){showAlert('Marque a situação: Presente ou Ausente.','error');valido=false;}
+  if(situacao==='F'&&!observacao){showAlert('Selecione a justificativa da ausência.','error');valido=false;}
+  if(!valido)return;
   const btn=document.getElementById('btn-add-reg');
   btn.innerHTML='<span class="spinner"></span> Salvando...';btn.disabled=true;
   let ok=0;let erros=0;
@@ -1003,10 +1094,18 @@ async function addAluno(){
   const turma=document.getElementById('a-turma').value.trim();
   const campo=document.getElementById('a-turno-sel').value;
   const setor_fixo=document.getElementById('a-campo-sel').value;
-  if(!nome){showAlert('Informe o nome do aluno.','error');return;}
+  const escala=document.getElementById('a-escala').value||'todos';
+  if(!nome){
+    showFieldError('fg-a-nome','Informe o nome do aluno');
+    return;
+  }
+  if(!campo){
+    showFieldError('fg-a-turno','Selecione o turno');
+    return;
+  }
   const btn=document.getElementById('btn-add-aluno');
   btn.innerHTML='<span class="spinner"></span> Salvando...';btn.disabled=true;
-  const{error}=await sb.from(tbl('alunos')).insert({nome,turma,campo,setor_fixo:setor_fixo||null});
+  const{error}=await sb.from(tbl('alunos')).insert({nome,turma,campo,setor_fixo:setor_fixo||null,escala});
   btn.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Cadastrar aluno';
   btn.disabled=false;
   if(error){showAlert('Erro: '+error.message,'error');return;}
@@ -1014,6 +1113,7 @@ async function addAluno(){
   document.getElementById('a-turma').value='';
   document.getElementById('a-turno-sel').value='';
   document.getElementById('a-campo-sel').value='';
+  document.getElementById('a-escala').value='todos';
   await refreshTudo();loadAlunos();
   showAlert(`Aluno "${nome}" cadastrado!`);
 }
@@ -1032,10 +1132,10 @@ async function loadAlunos(){
     h+=`<div class="aluno-row">
       <div class="aluno-row-info">
         <div class="aluno-row-nome">${a.nome}</div>
-        <div class="aluno-row-detail">Preceptor: ${a.turma||'—'} · Turno: ${a.campo||'—'} · Setor: ${a.setor_fixo||'—'}</div>
+        <div class="aluno-row-detail">Preceptor: ${a.turma||'—'} · Turno: ${a.campo||'—'} · Setor: ${a.setor_fixo||'—'} · Escala: ${escalaNome(a.escala)}</div>
       </div>
       <div class="aluno-row-btns">
-        <button class="btn btn-secondary btn-sm" onclick="openEditAluno(${a.id},'${a.nome.replace(/'/g,"\\'")}','${(a.turma||'').replace(/'/g,"\\'")}','${(a.campo||'').replace(/'/g,"\\'")}','${(a.setor_fixo||'').replace(/'/g,"\\'")}')">✏️ Editar</button>
+        <button class="btn btn-secondary btn-sm" onclick="openEditAluno(${a.id},'${a.nome.replace(/'/g,"\\'")}','${(a.turma||'').replace(/'/g,"\\'")}','${(a.campo||'').replace(/'/g,"\\'")}','${(a.setor_fixo||'').replace(/'/g,"\\'")}','${a.escala||'todos'}')">✏️ Editar</button>
         <button class="btn btn-danger btn-sm" onclick="removeAluno(${a.id},'${a.nome.replace(/'/g,"\\'")}')">🗑️</button>
       </div>
     </div>`;
@@ -1043,7 +1143,7 @@ async function loadAlunos(){
   h+=`</div>`;div.innerHTML=h;
 }
 
-function openEditAluno(id,nome,preceptor,turno,setor){
+function openEditAluno(id,nome,preceptor,turno,setor,escala){
   document.getElementById('edit-aluno-id').value=id;
   document.getElementById('edit-aluno-nome').value=nome;
   document.getElementById('edit-aluno-preceptor').value=preceptor||'';
@@ -1054,6 +1154,7 @@ function openEditAluno(id,nome,preceptor,turno,setor){
     selSetor.innerHTML+=`<option value="${c.nome}">${c.nome}</option>`;
   });
   selSetor.value=setor||'';
+  document.getElementById('edit-aluno-escala').value=escala||'todos';
   document.getElementById('edit-aluno-overlay').classList.add('open');
 }
 
@@ -1063,10 +1164,11 @@ async function saveEditAluno(){
   const turma=document.getElementById('edit-aluno-preceptor').value.trim();
   const campo=document.getElementById('edit-aluno-turno').value;
   const setor_fixo=document.getElementById('edit-aluno-setor').value;
+  const escala=document.getElementById('edit-aluno-escala').value||'todos';
   if(!nome){showAlert('Informe o nome.','error');return;}
   const btn=document.getElementById('btn-save-edit');
   btn.innerHTML='<span class="spinner"></span> Salvando...';btn.disabled=true;
-  const{error}=await sb.from(tbl('alunos')).update({nome,turma,campo,setor_fixo:setor_fixo||null}).eq('id',id);
+  const{error}=await sb.from(tbl('alunos')).update({nome,turma,campo,setor_fixo:setor_fixo||null,escala}).eq('id',id);
   btn.innerHTML='Salvar alterações';btn.disabled=false;
   if(error){showAlert('Erro: '+error.message,'error');return;}
   document.getElementById('edit-aluno-overlay').classList.remove('open');
@@ -1346,11 +1448,15 @@ document.addEventListener('DOMContentLoaded',()=>{
           const preceptor=String(r[1]||'').trim();
           const turnoRaw=String(r[2]||'').trim();
           const setor=String(r[3]||'').trim();
+          const escalRaw=String(r[4]||'todos').trim().toLowerCase();
           const turnoMap={'manha':'Manhã','manhã':'Manhã','tarde':'Tarde','noite':'Noite','integral':'Integral'};
           const turno=turnoMap[turnoRaw.toLowerCase()]||turnoRaw;
+          const escalaMap={'impar':'impar','ímpar':'impar','par':'par','todos':'todos','todo':'todos',''  :'todos'};
+          const escala=escalaMap[escalRaw]||'todos';
           if(!nome)erros.push(`Linha ${i+2}: nome vazio`);
           if(!['Manhã','Tarde','Noite','Integral'].includes(turno))erros.push(`Linha ${i+2}: turno inválido ("${turnoRaw}") — use Manhã, Tarde, Noite ou Integral`);
-          return{nome,preceptor,turno,setor};
+          if(!['todos','impar','par'].includes(escala))erros.push(`Linha ${i+2}: escala inválida ("${escalRaw}") — use todos, impar ou par`);
+          return{nome,preceptor,turno,setor,escala};
         });
         if(erros.length){
           document.getElementById('import-error').innerHTML='<strong>Erros encontrados:</strong><br>'+erros.join('<br>');
@@ -1361,8 +1467,8 @@ document.addEventListener('DOMContentLoaded',()=>{
           document.getElementById('btn-import').style.display='inline-flex';
         }
         document.getElementById('import-preview-txt').textContent=`${importData.length} aluno(s) encontrado(s) para importar:`;
-        let h=`<table><thead><tr><th>Nome</th><th>Preceptor</th><th>Turno</th><th>Campo</th></tr></thead><tbody>`;
-        importData.forEach(a=>{h+=`<tr><td>${a.nome}</td><td>${a.preceptor||'—'}</td><td>${a.turno}</td><td>${a.setor||'—'}</td></tr>`;});
+        let h=`<table><thead><tr><th>Nome</th><th>Preceptor</th><th>Turno</th><th>Setor</th><th>Escala</th></tr></thead><tbody>`;
+        importData.forEach(a=>{h+=`<tr><td>${a.nome}</td><td>${a.preceptor||'—'}</td><td>${a.turno}</td><td>${a.setor||'—'}</td><td>${escalaNome(a.escala)}</td></tr>`;});
         h+='</tbody></table>';
         document.getElementById('import-preview-table').innerHTML=h;
         document.getElementById('import-preview').style.display='block';
@@ -1379,7 +1485,7 @@ async function doImport(){
   if(!sb||!importData.length)return;
   const btn=document.getElementById('btn-import');
   btn.innerHTML='<span class="spinner"></span> Importando...';btn.disabled=true;
-  const registros=importData.map(a=>({nome:a.nome,turma:a.preceptor,campo:a.turno,setor_fixo:a.setor||null}));
+  const registros=importData.map(a=>({nome:a.nome,turma:a.preceptor,campo:a.turno,setor_fixo:a.setor||null,escala:a.escala||'todos'}));
   const{error}=await sb.from(tbl('alunos')).insert(registros);
   btn.innerHTML='Importar alunos';btn.disabled=false;
   if(error){
