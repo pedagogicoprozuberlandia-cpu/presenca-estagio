@@ -1311,15 +1311,17 @@ async function loadRegistros(){
   if(!data?.length){div.innerHTML='<div class="empty">Nenhum registro encontrado.</div>';return;}
   const badges={P:'<span class="badge badge-p">Presente</span>',F:'<span class="badge badge-f">Ausente</span>'};
   const ak=tbl('alunos');const ck=tbl('campos_estagio');
-  let h=`<table><thead><tr><th>Data</th><th>Aluno</th><th>Preceptor</th><th>Campo</th><th>Turno</th><th>Situação</th><th>Observação</th><th></th></tr></thead><tbody>`;
+  let h=`<table><thead><tr><th>Data</th><th>Aluno</th><th>Preceptor</th><th>Setor</th><th>Turno</th><th>Horas</th><th>Situação</th><th>Observação</th><th></th></tr></thead><tbody>`;
   data.forEach(r=>{
     const[y,m,d]=r.data.split('-');
+    const horas=r.situacao==='P'?horasPorTurno(r.turno):0;
     h+=`<tr>
       <td>${d}/${m}/${y}</td>
       <td>${r[ak]?.nome||'—'}</td>
       <td>${r[ak]?.turma||'—'}</td>
       <td>${r[ck]?.nome||'—'}</td>
       <td>${r.turno||'—'}</td>
+      <td style="color:#065f46;font-weight:600">${horas}h</td>
       <td>${badges[r.situacao]||r.situacao}</td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b">${r.observacao||'—'}</td>
       <td><button class="btn btn-danger btn-sm" onclick="removeRegistro(${r.id})">✕</button></td>
@@ -1461,19 +1463,21 @@ async function exportExcel(){
   const rows=regs.map(r=>{
     const[y,m,d]=r.data.split('-');
     const campoNome=r[ck]?.nome||r[ak]?.setor_fixo||'';
+    const horas=r.situacao==='P'?horasPorTurno(r.turno):0;
     return{
       'Hospital':HOSPITAL.nome,
       'Data':`${d}/${m}/${y}`,
       'Aluno':r[ak]?.nome||'',
       'Preceptor':r[ak]?.turma||'',
-      'Turno':r[ak]?.campo||r.turno||'',
+      'Turno':r.turno||'',
       'Setor de estágio':campoNome,
       'Situação':sit[r.situacao]||r.situacao,
+      'Horas':horas,
       'Observação':r.observacao||''
     };
   });
   const ws1=XLSX.utils.json_to_sheet(rows);
-  ws1['!cols']=[{wch:14},{wch:12},{wch:32},{wch:24},{wch:10},{wch:24},{wch:12},{wch:40}];
+  ws1['!cols']=[{wch:14},{wch:12},{wch:32},{wch:24},{wch:10},{wch:24},{wch:12},{wch:8},{wch:40}];
   XLSX.utils.book_append_sheet(wb,ws1,'Registros');
 
   const relRows=(alunos||[]).map(a=>{
