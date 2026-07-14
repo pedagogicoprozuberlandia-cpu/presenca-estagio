@@ -328,7 +328,7 @@ tr:hover td{background:#f8fafc}
               <button class="turno-btn" onclick="setTurno('Manhã')" id="turno-Manhã">🌅 Manhã</button>
               <button class="turno-btn" onclick="setTurno('Tarde')" id="turno-Tarde">🌤️ Tarde</button>
               <button class="turno-btn" onclick="setTurno('Noite')" id="turno-Noite">🌙 Noite</button>
-              <button class="turno-btn" onclick="setTurno('Integral')" id="turno-Integral">📅 Integral</button>
+              
             </div>
             <input type="hidden" id="r-turno"/>
             <span class="field-error-msg">Selecione o turno</span>
@@ -452,7 +452,7 @@ tr:hover td{background:#f8fafc}
               <option value="Manhã">🌅 Manhã</option>
               <option value="Tarde">🌤️ Tarde</option>
               <option value="Noite">🌙 Noite</option>
-              <option value="Integral">📅 Integral</option>
+              
             </select>
             <span class="field-error-msg">Selecione o turno</span>
           </div>
@@ -546,7 +546,7 @@ tr:hover td{background:#f8fafc}
         A planilha deve ter exatamente <strong>5 colunas</strong>, nesta ordem:<br>
         <strong>Coluna A</strong> → Nome do aluno<br>
         <strong>Coluna B</strong> → Nome do preceptor<br>
-        <strong>Coluna C</strong> → Turno (Manhã, Tarde, Noite ou Integral)<br>
+        <strong>Coluna C</strong> → Turno (Manhã, Tarde, Noite )<br>
         <strong>Coluna D</strong> → Setor de estágio<br>
         <strong>Coluna E</strong> → Escala (todos, impar ou par)<br><br>
         ⚠️ A <strong>primeira linha</strong> deve ser o cabeçalho (ex: Nome | Preceptor | Turno | Setor | Escala)<br>
@@ -634,7 +634,7 @@ tr:hover td{background:#f8fafc}
         <option value="Manhã">🌅 Manhã</option>
         <option value="Tarde">🌤️ Tarde</option>
         <option value="Noite">🌙 Noite</option>
-        <option value="Integral">📅 Integral</option>
+        
       </select>
     </div>
     <div class="form-group" style="margin-bottom:14px">
@@ -778,7 +778,7 @@ function horasPorTurno(turno){
   if(turno==='Manhã') return 5;
   if(turno==='Tarde') return 5;
   if(turno==='Noite') return 4;
-  if(turno==='Integral') return 10;
+  
   return 5;
 }
 
@@ -858,7 +858,7 @@ function getObservacao(){
 
 function setTurno(val){
   document.getElementById('r-turno').value=val;
-  ['Manhã','Tarde','Noite','Integral'].forEach(t=>{
+  ['Manhã','Tarde','Noite'].forEach(t=>{
     document.getElementById('turno-'+t).classList.toggle('selected',t===val);
   });
   // resetar preceptor e aluno ao trocar turno
@@ -1039,7 +1039,7 @@ function selectPreceptor(nome){
 
 function setTurno(val){
   document.getElementById('r-turno').value=val;
-  ['Manhã','Tarde','Noite','Integral'].forEach(t=>{
+  ['Manhã','Tarde','Noite'].forEach(t=>{
     document.getElementById('turno-'+t).classList.toggle('selected',t===val);
   });
   clearError('fg-turno');
@@ -1576,7 +1576,7 @@ document.addEventListener('DOMContentLoaded',()=>{
           const escalaMap={'impar':'impar','ímpar':'impar','par':'par','todos':'todos','todo':'todos',''  :'todos'};
           const escala=escalaMap[escalRaw]||'todos';
           if(!nome)erros.push(`Linha ${i+2}: nome vazio`);
-          if(!['Manhã','Tarde','Noite','Integral'].includes(turno))erros.push(`Linha ${i+2}: turno inválido ("${turnoRaw}") — use Manhã, Tarde, Noite ou Integral`);
+          if(!['Manhã','Tarde','Noite'].includes(turno))erros.push(`Linha ${i+2}: turno inválido ("${turnoRaw}") — use Manhã, Tarde, Noite `);
           if(!['todos','impar','par'].includes(escala))erros.push(`Linha ${i+2}: escala inválida ("${escalRaw}") — use todos, impar ou par`);
           return{nome,preceptor,turno,setor,escala};
         });
