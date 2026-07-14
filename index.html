@@ -422,7 +422,7 @@ tr:hover td{background:#f8fafc}
       </div>
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-          <div class="card-title" style="margin:0">Registros recentes</div>
+          <div class="card-title" style="margin:0">Registros do aluno</div>
           <div class="filters" style="margin:0">
             <input type="date" id="f-data" onchange="loadRegistros()"/>
             <select id="f-aluno-r" onchange="loadRegistros()"><option value="">Todos os alunos</option></select>
@@ -1301,51 +1301,52 @@ async function loadRegistros(){
   const fData=document.getElementById('f-data')?.value||'';
   const fAluno=document.getElementById('f-aluno-r')?.value||'';
   const fSit=document.getElementById('f-sit')?.value||'';
+  const div=document.getElementById('registros-table');
+
+  // só carrega se um aluno estiver selecionado
+  if(!fAluno){
+    div.innerHTML=`<div class="empty" style="padding:32px">
+      <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:0.3;margin-bottom:8px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <div>Selecione um aluno no filtro acima para ver os registros</div>
+    </div>`;
+    return;
+  }
+
   let q=sb.from(tbl('registros_presenca')).select(`*, ${tbl('alunos')}(nome,turma), ${tbl('campos_estagio')}(nome)`).order('data',{ascending:false}).order('id',{ascending:false});
   if(fData)q=q.eq('data',fData);
   if(fAluno)q=q.eq('aluno_id',fAluno);
   if(fSit)q=q.eq('situacao',fSit);
   const{data,error}=await q.limit(200);
-  const div=document.getElementById('registros-table');
   if(error){div.innerHTML='<div class="empty">Erro ao carregar.</div>';return;}
   if(!data?.length){div.innerHTML='<div class="empty">Nenhum registro encontrado.</div>';return;}
   const badges={P:'<span class="badge badge-p">Presente</span>',F:'<span class="badge badge-f">Ausente</span>'};
   const ak=tbl('alunos');const ck=tbl('campos_estagio');
-
-  // agrupar por aluno
-  const porAluno={};
+  let totalHoras=0;
+  let h=`<table><thead><tr><th>Data</th><th>Aluno</th><th>Preceptor</th><th>Setor</th><th>Turno</th><th>Horas</th><th>Situação</th><th>Observação</th><th></th></tr></thead><tbody>`;
   data.forEach(r=>{
-    const id=r.aluno_id;
-    if(!porAluno[id]) porAluno[id]={nome:r[ak]?.nome||'—',preceptor:r[ak]?.turma||'—',regs:[]};
-    porAluno[id].regs.push(r);
+    const[y,m,d]=r.data.split('-');
+    const horas=r.situacao==='P'?horasPorTurno(r.turno):0;
+    totalHoras+=horas;
+    h+=`<tr>
+      <td>${d}/${m}/${y}</td>
+      <td>${r[ak]?.nome||'—'}</td>
+      <td>${r[ak]?.turma||'—'}</td>
+      <td>${r[ck]?.nome||'—'}</td>
+      <td>${r.turno||'—'}</td>
+      <td style="color:#065f46;font-weight:600">${horas}h</td>
+      <td>${badges[r.situacao]||r.situacao}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b">${r.observacao||'—'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="removeRegistro(${r.id})">✕</button></td>
+    </tr>`;
   });
-
-  let h='';
-  Object.values(porAluno).forEach(({nome,preceptor,regs})=>{
-    const totalH=regs.filter(r=>r.situacao==='P').reduce((acc,r)=>acc+horasPorTurno(r.turno),0);
-    h+=`<div style="margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#ede9fe;border-radius:8px 8px 0 0;border:1px solid #c4b5fd">
-        <div style="font-weight:700;color:#4c1d95;font-size:14px">👤 ${nome} <span style="font-weight:400;font-size:12px;color:#6d28d9">· ${preceptor}</span></div>
-        <div style="font-weight:700;color:#065f46;font-size:14px;background:#d1fae5;padding:3px 12px;border-radius:20px">${totalH}h</div>
-      </div>
-      <div class="table-wrap"><table style="border-radius:0 0 8px 8px;overflow:hidden">
-        <thead><tr><th>Data</th><th>Setor</th><th>Turno</th><th>Horas</th><th>Situação</th><th>Observação</th><th></th></tr></thead>
-        <tbody>`;
-    regs.forEach(r=>{
-      const[y,m,d]=r.data.split('-');
-      const horas=r.situacao==='P'?horasPorTurno(r.turno):0;
-      h+=`<tr>
-        <td>${d}/${m}/${y}</td>
-        <td>${r[ck]?.nome||'—'}</td>
-        <td>${r.turno||'—'}</td>
-        <td style="color:#065f46;font-weight:600">${horas}h</td>
-        <td>${badges[r.situacao]||r.situacao}</td>
-        <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b">${r.observacao||'—'}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="removeRegistro(${r.id})">✕</button></td>
-      </tr>`;
-    });
-    h+=`</tbody></table></div></div>`;
-  });
+  if(fAluno){
+    h+=`<tr style="background:#f0fdf4">
+      <td colspan="5" style="text-align:right;font-weight:700;color:#374151;padding:10px 12px">Total de horas:</td>
+      <td style="font-weight:700;color:#065f46;font-size:15px;padding:10px 12px">${totalHoras}h</td>
+      <td colspan="3"></td>
+    </tr>`;
+  }
+  h+='</tbody></table>';
   div.innerHTML=h;
 }
 
