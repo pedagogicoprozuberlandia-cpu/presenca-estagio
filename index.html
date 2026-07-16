@@ -420,6 +420,18 @@ tr:hover td{background:#f8fafc}
           </button>
         </div>
       </div>
+
+      <!-- REPOSIÇÃO -->
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          Reposição de estágio
+        </div>
+        <p style="font-size:13px;color:#64748b;margin-bottom:10px">Busque qualquer aluno para lançar reposição, independente de turno, preceptor ou escala.</p>
+        <input type="text" id="rep-busca" placeholder="Digite o nome do aluno..." oninput="buscarReposicao()" style="width:100%;padding:9px 12px;font-size:14px;border:1px solid #d1d5db;border-radius:8px;outline:none;margin-bottom:10px"/>
+        <div id="rep-lista"></div>
+      </div>
+
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
           <div class="card-title" style="margin:0">Registros do aluno</div>
@@ -1539,6 +1551,36 @@ async function buscarAluno(){
     </div>`;
   });
   div.innerHTML=html;
+}
+
+function buscarReposicao(){
+  const termo=document.getElementById('rep-busca').value.trim().toLowerCase();
+  const div=document.getElementById('rep-lista');
+  if(termo.length<2){div.innerHTML='';return;}
+  let lista=[...ALUNOS].filter(a=>a.nome.toLowerCase().includes(termo)).sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
+  if(!lista.length){div.innerHTML='<div class="empty" style="padding:12px;font-size:13px">Nenhum aluno encontrado.</div>';return;}
+  div.innerHTML=lista.map(a=>`
+    <div class="aluno-card${ALUNOS_SEL.has(a.id)?' selected':''}" data-id="${a.id}"
+      style="margin-bottom:6px" onclick="toggleReposicaoAluno(${a.id})">
+      <div class="ac-check">✓</div>
+      <div class="ac-nome">${a.nome}</div>
+      <div class="ac-turma">Preceptor: ${a.turma||'—'} · ${a.campo||'—'} · ${escalaNome(a.escala)}</div>
+    </div>`).join('');
+  // reattach touch events
+  div.querySelectorAll('.aluno-card').forEach(card=>{
+    let tm=false;
+    card.addEventListener('touchstart',()=>{tm=false;},{passive:true});
+    card.addEventListener('touchmove',()=>{tm=true;},{passive:true});
+    card.addEventListener('touchend',(e)=>{if(!tm){e.preventDefault();toggleReposicaoAluno(Number(card.dataset.id));}});
+  });
+}
+
+function toggleReposicaoAluno(id){
+  if(ALUNOS_SEL.has(id)){ALUNOS_SEL.delete(id);}
+  else{ALUNOS_SEL.add(id);}
+  buscarReposicao();
+  updateAcd();
+  atualizarSelInfo();
 }
 
 function selecionarBusca(id){
