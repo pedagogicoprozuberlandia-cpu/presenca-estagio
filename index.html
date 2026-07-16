@@ -365,23 +365,17 @@ tr:hover td{background:#f8fafc}
               <span class="acd-arrow">▼</span>
             </div>
             <div class="acd-body" id="acdb-aluno">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-                <input type="text" id="busca-aluno-reg" placeholder="Buscar aluno do dia..." oninput="filtrarAlunosReg()" style="width:200px;font-size:13px;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;outline:none"/>
-                <div style="display:flex;gap:8px;align-items:center">
-                  <button class="btn btn-secondary btn-sm" onclick="selecionarTodos()">Selecionar todos</button>
-                  <button class="btn btn-secondary btn-sm" onclick="deselecionarTodos()">Limpar</button>
-                </div>
+              <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+                <input type="text" id="busca-aluno-reg" placeholder="👥 Buscar aluno do dia..." oninput="filtrarAlunosReg()" style="flex:1;min-width:140px;font-size:13px;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;outline:none"/>
+                <input type="text" id="rep-busca" placeholder="🔄 Reposição..." oninput="buscarReposicao()" style="flex:1;min-width:140px;font-size:13px;padding:7px 10px;border:1px solid #f59e0b;border-radius:8px;outline:none;background:#fffbeb"/>
+              </div>
+              <div style="display:flex;gap:6px;margin-bottom:8px">
+                <button class="btn btn-secondary btn-sm" onclick="selecionarTodos()">Selecionar todos</button>
+                <button class="btn btn-secondary btn-sm" onclick="deselecionarTodos()">Limpar</button>
               </div>
               <div class="alunos-sel-info" id="alunos-sel-info"></div>
               <div class="alunos-grid" id="alunos-grid-reg"><div class="empty" style="padding:12px;font-size:13px">Nenhum aluno cadastrado.</div></div>
-
-              <!-- REPOSIÇÃO dentro do acordeão -->
-              <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #e2e8f0">
-                <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;letter-spacing:0.3px">🔄 REPOSIÇÃO — buscar qualquer aluno</div>
-                <input type="text" id="rep-busca" placeholder="Digite o nome do aluno em reposição..." oninput="buscarReposicao()" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;outline:none;margin-bottom:8px"/>
-                <div id="rep-lista"></div>
-              </div>
-
+              <div id="rep-lista"></div>
               <input type="hidden" id="r-aluno-id"/>
             </div>
           </div>
@@ -1550,20 +1544,29 @@ async function buscarAluno(){
   div.innerHTML=html;
 }
 
+function showAlunoTab(tab){
+  const isDia=tab==='dia';
+  document.getElementById('panel-dia').style.display=isDia?'block':'none';
+  document.getElementById('panel-rep').style.display=isDia?'none':'block';
+  document.getElementById('tab-dia').style.color=isDia?'#5b21b6':'#64748b';
+  document.getElementById('tab-dia').style.borderBottomColor=isDia?'#5b21b6':'transparent';
+  document.getElementById('tab-rep').style.color=isDia?'#64748b':'#5b21b6';
+  document.getElementById('tab-rep').style.borderBottomColor=isDia?'transparent':'#5b21b6';
+}
+
 function buscarReposicao(){
   const termo=document.getElementById('rep-busca').value.trim().toLowerCase();
   const div=document.getElementById('rep-lista');
   if(termo.length<2){div.innerHTML='';return;}
   let lista=[...ALUNOS].filter(a=>a.nome.toLowerCase().includes(termo)).sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
-  if(!lista.length){div.innerHTML='<div class="empty" style="padding:12px;font-size:13px">Nenhum aluno encontrado.</div>';return;}
-  div.innerHTML=lista.map(a=>`
-    <div class="aluno-card${ALUNOS_SEL.has(a.id)?' selected':''}" data-id="${a.id}"
-      style="margin-bottom:6px" onclick="toggleReposicaoAluno(${a.id})">
+  if(!lista.length){div.innerHTML='<div class="empty" style="padding:10px;font-size:12px">Nenhum aluno encontrado.</div>';return;}
+  div.innerHTML=`<div style="font-size:11px;font-weight:700;color:#92400e;background:#fef3c7;padding:6px 10px;border-radius:6px;margin-bottom:6px">🔄 Resultados de reposição</div>`+
+  lista.map(a=>`
+    <div class="aluno-card${ALUNOS_SEL.has(a.id)?' selected':''}" data-id="${a.id}" style="margin-bottom:6px" onclick="toggleReposicaoAluno(${a.id})">
       <div class="ac-check">✓</div>
       <div class="ac-nome">${a.nome}</div>
-      <div class="ac-turma">Preceptor: ${a.turma||'—'} · ${a.campo||'—'} · ${escalaNome(a.escala)}</div>
+      <div class="ac-turma">${a.turma||'—'} · ${a.campo||'—'} · ${escalaNome(a.escala)}</div>
     </div>`).join('');
-  // reattach touch events
   div.querySelectorAll('.aluno-card').forEach(card=>{
     let tm=false;
     card.addEventListener('touchstart',()=>{tm=false;},{passive:true});
@@ -1578,6 +1581,8 @@ function toggleReposicaoAluno(id){
   buscarReposicao();
   updateAcd();
   atualizarSelInfo();
+  const infoRep=document.getElementById('alunos-sel-info-rep');
+  if(infoRep) infoRep.textContent=ALUNOS_SEL.size>0?`✓ ${ALUNOS_SEL.size} aluno(s) selecionado(s)`:'';
 }
 
 function selecionarBusca(id){
