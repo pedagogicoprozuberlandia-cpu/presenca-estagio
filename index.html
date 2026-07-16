@@ -503,11 +503,12 @@ tr:hover td{background:#f8fafc}
     <!-- PAGE: BUSCA -->
     <div id="page-busca" class="page">
       <div class="page-title">Buscar Aluno</div>
-      <div class="page-sub">Busque qualquer aluno e veja o histórico completo de presenças</div>
+      <div class="page-sub">Busque qualquer aluno — inclusive para lançar reposição de estágio</div>
       <div class="card">
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <input type="text" id="busca-global-input" placeholder="Digite o nome do aluno..." style="flex:1;min-width:200px;padding:10px 14px;font-size:14px;border:1px solid #d1d5db;border-radius:8px;outline:none" oninput="buscarAluno()"/>
-        </div>
+        <input type="text" id="busca-global-input" placeholder="Digite o nome do aluno..." style="width:100%;padding:10px 14px;font-size:14px;border:1px solid #d1d5db;border-radius:8px;outline:none" oninput="buscarAluno()"/>
+      </div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:12px" id="busca-hint" style="display:none">
+        👆 Clique no aluno para adicioná-lo à lista de presença do dia atual
       </div>
       <div id="busca-resultado"></div>
     </div>
@@ -944,17 +945,33 @@ function autoSetCampoPorAlunos(){
   document.getElementById('r-campo-id').value='auto';
 }
 
+let MOSTRAR_TODOS=false;
+
+function toggleMostrarTodos(){
+  MOSTRAR_TODOS=!MOSTRAR_TODOS;
+  const btn=document.getElementById('btn-mostrar-todos');
+  if(MOSTRAR_TODOS){
+    btn.textContent='✅ Mostrando reposição — clique para voltar';
+    btn.style.color='#065f46';btn.style.borderColor='#065f46';
+  }else{
+    btn.textContent='🔍 Mostrar alunos em reposição';
+    btn.style.color='#5b21b6';btn.style.borderColor='#5b21b6';
+  }
+  renderAlunosFiltrados();
+}
+
 function renderAlunosFiltrados(){
   const prec=document.getElementById('r-preceptor-sel').value;
   const turno=document.getElementById('r-turno').value;
   const filtro=document.getElementById('busca-aluno-reg')?.value||'';
   let lista=[...ALUNOS];
   if(prec) lista=lista.filter(a=>a.turma===prec);
-  if(turno) lista=lista.filter(a=>a.campo===turno);
+  // filtrar por turno só se o aluno tiver turno cadastrado E for diferente
+  if(turno) lista=lista.filter(a=>!a.campo || a.campo===turno);
   if(filtro) lista=lista.filter(a=>a.nome.toLowerCase().includes(filtro.toLowerCase()));
-  // filtrar por escala (ímpar/par) baseado na data selecionada
+  // filtrar por escala (ímpar/par) — ignorar se for reposição
   const dataReg=document.getElementById('r-data')?.value||new Date().toISOString().split('T')[0];
-  lista=lista.filter(a=>deveAparecerHoje(a, dataReg));
+  if(!MOSTRAR_TODOS) lista=lista.filter(a=>deveAparecerHoje(a, dataReg));
   // esconder alunos já lançados hoje
   lista=lista.filter(a=>!ALUNOS_LANCADOS.has(a.id));
   lista=lista.sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
@@ -1100,6 +1117,9 @@ async function addRegistro(){
   btn.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Registrar presença';
   btn.disabled=false;
   ALUNOS_SEL.clear();
+  MOSTRAR_TODOS=false;
+  const btnMT=document.getElementById('btn-mostrar-todos');
+  if(btnMT){btnMT.textContent='🔍 Mostrar alunos em reposição';btnMT.style.color='#5b21b6';btnMT.style.borderColor='#5b21b6';}
   document.getElementById('r-campo-id').value='';
   setSituacao('');
   resetJustificativa();
@@ -1404,73 +1424,134 @@ async function loadRelatorio(){
   document.querySelector('#m-freq').closest('.metric').querySelector('.metric-lbl').textContent='Total de horas';
 }
 
+let REP_ALUNO_ID=null;
+let REP_HOSPITAL=null;
+
+function openReposicao(alunoId, alunoNome, hospital){
+  REP_ALUNO_ID=alunoId;
+  REP_HOSPITAL=hospital;
+  document.getElementById('rep-aluno-info').textContent='👤 '+alunoNome+' — '+hospital;
+  document.getElementById('rep-data').value=new Date().toISOString().split('T')[0];
+  document.getElementById('rep-turno').value='';
+  document.getElementById('rep-situacao').value='';
+  document.getElementById('rep-sit-P').classList.remove('selected');
+  document.getElementById('rep-sit-F').classList.remove('selected');
+  document.getElementById('rep-obs-wrap').style.display='none';
+  document.getElementById('rep-obs-val').value='';
+  document.querySelectorAll('#rep-obs-wrap .just-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('rep-obs-livre').style.display='none';
+  document.getElementById('reposicao-overlay').classList.add('open');
+}
+
+function closeReposicao(){
+  document.getElementById('reposicao-overlay').classList.remove('open');
+  REP_ALUNO_ID=null;REP_HOSPITAL=null;
+}
+
+function setRepSituacao(val){
+  document.getElementById('rep-situacao').value=val;
+  document.getElementById('rep-sit-P').classList.toggle('selected',val==='P');
+  document.getElementById('rep-sit-F').classList.toggle('selected',val==='F');
+  document.getElementById('rep-obs-wrap').style.display=val==='F'?'block':'none';
+  if(val==='P'){document.getElementById('rep-obs-val').value='';document.getElementById('rep-obs-livre').style.display='none';document.querySelectorAll('#rep-obs-wrap .just-btn').forEach(b=>b.classList.remove('selected'));}
+}
+
+function setRepJust(val){
+  document.querySelectorAll('#rep-obs-wrap .just-btn').forEach(b=>b.classList.remove('selected'));
+  event.target.classList.add('selected');
+  if(val==='outros'){document.getElementById('rep-obs-livre').style.display='block';document.getElementById('rep-obs-val').value='';}
+  else{document.getElementById('rep-obs-livre').style.display='none';document.getElementById('rep-obs-val').value=val;}
+}
+
+async function salvarReposicao(){
+  const data=document.getElementById('rep-data').value;
+  const turno=document.getElementById('rep-turno').value;
+  const situacao=document.getElementById('rep-situacao').value;
+  const obsVal=document.getElementById('rep-obs-val').value;
+  const obsLivre=document.getElementById('rep-obs')?.value?.trim()||'';
+  const observacao=obsVal||obsLivre;
+  if(!data){showFieldError('fg-rep-data','Informe a data');return;}
+  if(!turno){showFieldError('fg-rep-turno','Selecione o turno');return;}
+  if(!situacao){showAlert('Marque a situação.','error');return;}
+  if(situacao==='F'&&!observacao){showAlert('Selecione a justificativa.','error');return;}
+
+  // usar prefixo do hospital correto
+  const hospKey=Object.keys(HOSPITAIS).find(k=>HOSPITAIS[k].nome===REP_HOSPITAL);
+  const prefixo=HOSPITAIS[hospKey]?.prefixo||tbl('').replace('alunos','');
+
+  const btn=document.getElementById('btn-rep-salvar');
+  btn.innerHTML='<span class="spinner"></span>';btn.disabled=true;
+  const{error}=await sb.from(prefixo+'registros_presenca').insert({
+    aluno_id:REP_ALUNO_ID,campo_id:null,data,turno,situacao,observacao:observacao||null
+  });
+  btn.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Registrar';
+  btn.disabled=false;
+  if(error){showAlert('Erro: '+error.message,'error');return;}
+  closeReposicao();
+  showAlert('Reposição registrada com sucesso!');
+  buscarAluno();
+}
+
 async function buscarAluno(){
   const termo=document.getElementById('busca-global-input').value.trim().toLowerCase();
   const div=document.getElementById('busca-resultado');
-  if(termo.length<2){div.innerHTML='';return;}
+  const hint=document.getElementById('busca-hint');
+  if(termo.length<2){div.innerHTML='';hint.style.display='none';return;}
 
-  // buscar em ambos os hospitais
   const resultados=[];
   for(const hosp of Object.keys(HOSPITAIS)){
     const prefixo=HOSPITAIS[hosp].prefixo;
     const{data:alunos}=await sb.from(prefixo+'alunos').select('*').ilike('nome','%'+termo+'%').order('nome');
     if(alunos?.length){
       for(const a of alunos){
-        const{data:regs}=await sb.from(prefixo+'registros_presenca').select(`*, ${prefixo}campos_estagio(nome)`).eq('aluno_id',a.id).order('data',{ascending:false});
-        const p=(regs||[]).filter(r=>r.situacao==='P').length;
-        const f=(regs||[]).filter(r=>r.situacao==='F').length;
-        const horas=(regs||[]).filter(r=>r.situacao==='P').reduce((acc,r)=>acc+horasPorTurno(r.turno),0);
-        resultados.push({hospital:HOSPITAIS[hosp].nome,aluno:a,regs:regs||[],p,f,horas});
+        const{data:regs}=await sb.from(prefixo+'registros_presenca').select('*');
+        const p=(regs||[]).filter(r=>r.aluno_id===a.id&&r.situacao==='P').length;
+        const horas=(regs||[]).filter(r=>r.aluno_id===a.id&&r.situacao==='P').reduce((acc,r)=>acc+horasPorTurno(r.turno),0);
+        // só mostra alunos do hospital atual
+        if(hosp===HOSPITAL.id) resultados.push({aluno:a,p,horas,prefixo});
       }
     }
   }
 
   if(!resultados.length){
-    div.innerHTML='<div class="card"><div class="empty">Nenhum aluno encontrado com esse nome.</div></div>';
+    div.innerHTML='<div class="card"><div class="empty">Nenhum aluno encontrado.</div></div>';
+    hint.style.display='none';
     return;
   }
 
-  const badges={P:'<span class="badge badge-p">Presente</span>',F:'<span class="badge badge-f">Ausente</span>'};
+  hint.style.display='block';
   let html='';
-  resultados.forEach(({hospital,aluno,regs,p,f,horas})=>{
-    html+=`<div class="card" style="margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+  resultados.forEach(({aluno,p,horas})=>{
+    const jasel=ALUNOS_SEL.has(aluno.id);
+    html+=`<div class="aluno-card${jasel?' selected':''}" data-id="${aluno.id}" 
+      style="margin-bottom:8px;padding:14px 16px;cursor:pointer;border-radius:10px;border:2px solid ${jasel?'#5b21b6':'#e2e8f0'};background:${jasel?'#ede9fe':'#f8fafc'}"
+      onclick="selecionarBusca(${aluno.id})">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
         <div>
-          <div style="font-size:16px;font-weight:700;color:#1a202c">${aluno.nome}</div>
-          <div style="font-size:12px;color:#64748b;margin-top:3px">
-            ${hospital} · Preceptor: ${aluno.turma||'—'} · Turno: ${aluno.campo||'—'} · Setor: ${aluno.setor_fixo||'—'} · Escala: ${escalaNome(aluno.escala)}
-          </div>
+          <div style="font-size:14px;font-weight:700;color:${jasel?'#4c1d95':'#1a202c'}">${jasel?'✓ ':''} ${aluno.nome}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">Preceptor: ${aluno.turma||'—'} · ${aluno.campo||'—'} · ${escalaNome(aluno.escala)}</div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <span style="background:#ede9fe;color:#4c1d95;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">${p} presenças</span>
-          <span style="background:#fee2e2;color:#991b1b;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">${f} faltas</span>
-          <span style="background:#d1fae5;color:#065f46;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">${horas}h</span>
+        <div style="display:flex;gap:6px">
+          <span style="background:#ede9fe;color:#4c1d95;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">${p} pres.</span>
+          <span style="background:#d1fae5;color:#065f46;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">${horas}h</span>
         </div>
-      </div>`;
-    if(regs.length){
-      html+=`<div class="table-wrap"><table>
-        <thead><tr><th>Data</th><th>Setor</th><th>Turno</th><th>Situação</th><th>Observação</th></tr></thead><tbody>`;
-      regs.forEach(r=>{
-        const[y,m,d]=r.data.split('-');
-        const ck=Object.keys(HOSPITAIS).find(k=>HOSPITAIS[k].nome===hospital);
-        const setorNome=r[HOSPITAIS[ck]?.prefixo+'campos_estagio']?.nome||'—';
-        html+=`<tr>
-          <td>${d}/${m}/${y}</td>
-          <td>${setorNome}</td>
-          <td>${r.turno||'—'}</td>
-          <td>${badges[r.situacao]||r.situacao}</td>
-          <td style="color:#64748b;font-size:12px">${r.observacao||'—'}</td>
-        </tr>`;
-      });
-      html+='</tbody></table></div>';
-    }else{
-      html+='<div class="empty" style="padding:16px">Nenhum registro ainda.</div>';
-    }
-    html+='</div>';
+      </div>
+    </div>`;
   });
   div.innerHTML=html;
 }
 
+function selecionarBusca(id){
+  if(ALUNOS_SEL.has(id)){
+    ALUNOS_SEL.delete(id);
+    showAlert('Aluno removido da seleção.','info');
+  }else{
+    ALUNOS_SEL.add(id);
+    showAlert('✅ Aluno adicionado! Vá para Registrar presença para finalizar.','success');
+  }
+  buscarAluno();
+  updateAcd();
+}
 async function exportExcel(){
   if(!sb)return;
   showAlert('Gerando planilha...','info');
