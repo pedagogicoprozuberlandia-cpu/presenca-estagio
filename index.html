@@ -366,7 +366,7 @@ tr:hover td{background:#f8fafc}
             </div>
             <div class="acd-body" id="acdb-aluno">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-                <input type="text" id="busca-aluno-reg" placeholder="Buscar aluno..." oninput="filtrarAlunosReg()" style="width:200px;font-size:13px;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;outline:none"/>
+                <input type="text" id="busca-aluno-reg" placeholder="Buscar aluno do dia..." oninput="filtrarAlunosReg()" style="width:200px;font-size:13px;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;outline:none"/>
                 <div style="display:flex;gap:8px;align-items:center">
                   <button class="btn btn-secondary btn-sm" onclick="selecionarTodos()">Selecionar todos</button>
                   <button class="btn btn-secondary btn-sm" onclick="deselecionarTodos()">Limpar</button>
@@ -374,6 +374,14 @@ tr:hover td{background:#f8fafc}
               </div>
               <div class="alunos-sel-info" id="alunos-sel-info"></div>
               <div class="alunos-grid" id="alunos-grid-reg"><div class="empty" style="padding:12px;font-size:13px">Nenhum aluno cadastrado.</div></div>
+
+              <!-- REPOSIÇÃO dentro do acordeão -->
+              <div style="margin-top:14px;padding-top:12px;border-top:1px dashed #e2e8f0">
+                <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;letter-spacing:0.3px">🔄 REPOSIÇÃO — buscar qualquer aluno</div>
+                <input type="text" id="rep-busca" placeholder="Digite o nome do aluno em reposição..." oninput="buscarReposicao()" style="width:100%;font-size:13px;padding:7px 10px;border:1px solid #d1d5db;border-radius:8px;outline:none;margin-bottom:8px"/>
+                <div id="rep-lista"></div>
+              </div>
+
               <input type="hidden" id="r-aluno-id"/>
             </div>
           </div>
@@ -419,17 +427,6 @@ tr:hover td{background:#f8fafc}
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Registrar presença
           </button>
         </div>
-      </div>
-
-      <!-- REPOSIÇÃO -->
-      <div class="card">
-        <div class="card-title">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          Reposição de estágio
-        </div>
-        <p style="font-size:13px;color:#64748b;margin-bottom:10px">Busque qualquer aluno para lançar reposição, independente de turno, preceptor ou escala.</p>
-        <input type="text" id="rep-busca" placeholder="Digite o nome do aluno..." oninput="buscarReposicao()" style="width:100%;padding:9px 12px;font-size:14px;border:1px solid #d1d5db;border-radius:8px;outline:none;margin-bottom:10px"/>
-        <div id="rep-lista"></div>
       </div>
 
       <div class="card">
