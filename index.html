@@ -156,6 +156,17 @@ tr:hover td{background:#f8fafc}
 .obs-wrap.visible{display:block}
 .obs-aviso{font-size:12px;color:#dc2626;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:4px}
 
+/* DASHBOARD TABS */
+.dash-tab{padding:9px 20px;border-radius:8px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:14px;font-weight:600;color:#64748b;transition:all 0.15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.dash-tab:hover{border-color:#5b21b6;color:#5b21b6}
+.dash-tab.active{border-color:#5b21b6;background:#ede9fe;color:#4c1d95}
+
+/* EXPORT MENU */
+.export-menu{position:fixed;bottom:80px;left:16px;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:150;display:none;min-width:220px}
+.export-menu.open{display:block}
+.export-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#374151;transition:background 0.15s;border:none;background:none;width:100%;text-align:left}
+.export-item:hover{background:#f1f5f9}
+
 /* TURNO BUTTONS */
 .turno-btn{flex:1;padding:10px 6px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:13px;font-weight:600;color:#64748b;transition:all 0.15s;text-align:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .turno-btn:hover{border-color:#94a3b8;background:#f1f5f9}
@@ -265,6 +276,10 @@ tr:hover td{background:#f8fafc}
   <nav class="sidebar">
     <div class="nav-section">
       <div class="nav-section-title">Principal</div>
+      <button class="nav-item" onclick="goPage('dashboard',this)">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
       <button class="nav-item active" onclick="goPage('presenca',this)">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
         Registrar presença
@@ -292,9 +307,9 @@ tr:hover td{background:#f8fafc}
     </div>
     <div class="nav-section" style="margin-top:8px">
       <div class="nav-section-title">Exportar</div>
-      <button class="nav-item" onclick="exportExcel()">
+      <button class="nav-item" onclick="openExportMenu()">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Baixar Excel
+        Exportar
       </button>
     </div>
     <div class="nav-section" style="margin-top:8px">
@@ -503,6 +518,48 @@ tr:hover td{background:#f8fafc}
       </div>
     </div>
 
+    <!-- PAGE: DASHBOARD -->
+    <div id="page-dashboard" class="page">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Visão geral do campo de estágio</div>
+
+      <!-- Seletor de hospital -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="dash-tab active" id="dtab-todos" onclick="loadDashboard('todos')">🏥 Todos</button>
+        <button class="dash-tab" id="dtab-clara" onclick="loadDashboard('clara')">Clara</button>
+        <button class="dash-tab" id="dtab-genoveva" onclick="loadDashboard('genoveva')">Genoveva</button>
+      </div>
+
+      <!-- Métricas -->
+      <div class="metrics" id="dash-metrics" style="grid-template-columns:repeat(4,1fr)">
+        <div class="metric"><div class="metric-val" id="dm-alunos">—</div><div class="metric-lbl">Alunos</div></div>
+        <div class="metric"><div class="metric-val" id="dm-presencas" style="color:#5b21b6">—</div><div class="metric-lbl">Presenças</div></div>
+        <div class="metric"><div class="metric-val" id="dm-faltas" style="color:#dc2626">—</div><div class="metric-lbl">Faltas</div></div>
+        <div class="metric"><div class="metric-val" id="dm-horas" style="color:#065f46">—</div><div class="metric-lbl">Total horas</div></div>
+      </div>
+
+      <!-- Presenças hoje -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">📅 Presenças de hoje — <span id="dash-data-hoje" style="font-weight:400;color:#64748b"></span></div>
+        <div id="dash-hoje"></div>
+      </div>
+
+      <!-- Relatório por data -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+          <div class="card-title" style="margin:0">📋 Relatório por data</div>
+          <input type="date" id="dash-data-sel" onchange="loadDashboardData()" style="padding:7px 10px;font-size:13px;border:1px solid #d1d5db;border-radius:8px;outline:none"/>
+        </div>
+        <div id="dash-data-result"><div class="empty">Selecione uma data para ver os registros</div></div>
+      </div>
+
+      <!-- Top alunos por horas -->
+      <div class="card">
+        <div class="card-title">🏆 Ranking de horas acumuladas</div>
+        <div id="dash-ranking"></div>
+      </div>
+    </div>
+
     <!-- PAGE: BUSCA -->
     <div id="page-busca" class="page">
       <div class="page-title">Buscar Aluno</div>
@@ -593,6 +650,28 @@ tr:hover td{background:#f8fafc}
     </div>
   </div>
 </div>
+
+<!-- EXPORT MENU -->
+<div class="export-menu" id="export-menu">
+  <div class="export-item" onclick="exportExcel();closeExportMenu()">
+    <span style="font-size:18px">📊</span>
+    <div><div style="font-weight:700">Excel completo</div><div style="font-size:11px;color:#64748b;font-weight:400">Registros e relatório por aluno</div></div>
+  </div>
+  <div class="export-item" onclick="exportPDFRelatorio();closeExportMenu()">
+    <span style="font-size:18px">📄</span>
+    <div><div style="font-weight:700">PDF — Relatório por aluno</div><div style="font-size:11px;color:#64748b;font-weight:400">Frequência e horas acumuladas</div></div>
+  </div>
+  <div class="export-item" style="border-top:1px solid #f1f5f9;margin-top:4px;padding-top:12px">
+    <span style="font-size:18px">📋</span>
+    <div style="flex:1">
+      <div style="font-weight:700">PDF — Lista por data</div>
+      <div style="font-size:11px;color:#64748b;font-weight:400">Presenças e faltas de um dia</div>
+      <input type="date" id="pdf-data-sel" style="margin-top:6px;width:100%;padding:5px 8px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;outline:none" onclick="event.stopPropagation()"/>
+      <button class="btn btn-primary btn-sm" style="margin-top:6px;width:100%" onclick="exportPDFData();closeExportMenu()">Gerar PDF</button>
+    </div>
+  </div>
+</div>
+<div id="export-overlay-bg" style="display:none;position:fixed;inset:0;z-index:149" onclick="closeExportMenu()"></div>
 
 <!-- RESET MODAL -->
 <div class="overlay" id="reset-overlay">
@@ -797,6 +876,7 @@ function goPage(page,btn){
   const overlay=document.getElementById('sidebar-overlay');
   sidebar.classList.remove('open');
   overlay.classList.remove('open');
+  if(page==='dashboard'){loadDashboard(DASH_HOSP||'todos');}
   if(page==='alunos')loadAlunos();
   if(page==='campos')loadCampos();
   if(page==='busca'){document.getElementById('busca-global-input').value='';document.getElementById('busca-resultado').innerHTML='';setTimeout(()=>document.getElementById('busca-global-input').focus(),200);}
@@ -1721,6 +1801,212 @@ function selecionarBusca(id){
   buscarAluno();
   updateAcd();
 }
+// ─── EXPORT MENU ─────────────────────────────────────────────
+function openExportMenu(){
+  document.getElementById('export-menu').classList.toggle('open');
+  document.getElementById('export-overlay-bg').style.display=
+    document.getElementById('export-menu').classList.contains('open')?'block':'none';
+  document.getElementById('pdf-data-sel').value=new Date().toISOString().split('T')[0];
+}
+function closeExportMenu(){
+  document.getElementById('export-menu').classList.remove('open');
+  document.getElementById('export-overlay-bg').style.display='none';
+}
+
+// ─── PDF ─────────────────────────────────────────────────────
+async function exportPDFRelatorio(){
+  if(!sb)return;
+  showAlert('Gerando PDF...','info');
+  const{data:regs}=await sb.from(tbl('registros_presenca')).select('*');
+  const{data:alunos}=await sb.from(tbl('alunos')).select('*').order('nome');
+  const hoje=new Date();
+  const dataStr=`${String(hoje.getDate()).padStart(2,'0')}/${String(hoje.getMonth()+1).padStart(2,'0')}/${hoje.getFullYear()}`;
+  let html=`<html><head><meta charset="UTF-8"/>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:12px;color:#1a202c;margin:24px}
+    h1{font-size:18px;color:#5b21b6;margin-bottom:4px}
+    h2{font-size:13px;color:#64748b;font-weight:400;margin-bottom:16px}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px}
+    th{background:#5b21b6;color:white;padding:8px;text-align:left;font-size:11px}
+    td{padding:7px 8px;border-bottom:1px solid #e2e8f0;font-size:11px}
+    tr:nth-child(even) td{background:#f8fafc}
+    .ok{color:#065f46;font-weight:700} .bad{color:#dc2626;font-weight:700}
+    .footer{margin-top:16px;font-size:10px;color:#94a3b8}
+  </style></head><body>
+  <h1>Relatório de Frequência — ${HOSPITAL.nome}</h1>
+  <h2>Gerado em ${dataStr}</h2>
+  <table><thead><tr><th>Aluno</th><th>Preceptor</th><th>Turno</th><th>Setor</th><th>Presenças</th><th>Faltas</th><th>Horas</th><th>Frequência</th></tr></thead><tbody>`;
+  (alunos||[]).forEach(a=>{
+    const r=(regs||[]).filter(x=>x.aluno_id===a.id);
+    const p=r.filter(x=>x.situacao==='P').length;
+    const f=r.filter(x=>x.situacao==='F').length;
+    const h=r.filter(x=>x.situacao==='P').reduce((acc,x)=>acc+horasPorTurno(x.turno),0);
+    const freq=r.length?Math.round(p/r.length*100):0;
+    html+=`<tr><td>${a.nome}</td><td>${a.turma||'—'}</td><td>${a.campo||'—'}</td><td>${a.setor_fixo||'—'}</td>
+    <td class="ok">${p}</td><td class="bad">${f}</td><td class="ok">${h}h</td>
+    <td style="font-weight:700;color:${freq>=75?'#5b21b6':freq>=50?'#92400e':'#dc2626'}">${freq}%</td></tr>`;
+  });
+  html+=`</tbody></table><div class="footer">Sistema de Presença — PROZ Educação Uberlândia</div></body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();w.print();
+}
+
+async function exportPDFData(){
+  const data=document.getElementById('pdf-data-sel').value;
+  if(!data){showAlert('Selecione uma data.','error');return;}
+  if(!sb)return;
+  showAlert('Gerando PDF...','info');
+  const ak=tbl('alunos');const ck=tbl('campos_estagio');
+  const{data:regs}=await sb.from(tbl('registros_presenca')).select(`*, ${ak}(nome,turma,campo), ${ck}(nome)`).eq('data',data).order('id');
+  const[d,m,y]=[data.split('-')[2],data.split('-')[1],data.split('-')[0]];
+  const presentes=(regs||[]).filter(r=>r.situacao==='P');
+  const faltas=(regs||[]).filter(r=>r.situacao==='F');
+  const totalH=presentes.reduce((acc,r)=>acc+horasPorTurno(r.turno),0);
+  let html=`<html><head><meta charset="UTF-8"/>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:12px;color:#1a202c;margin:24px}
+    h1{font-size:18px;color:#5b21b6;margin-bottom:4px}
+    h2{font-size:13px;color:#64748b;font-weight:400;margin-bottom:16px}
+    .resumo{display:flex;gap:16px;margin-bottom:16px}
+    .box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 16px;text-align:center}
+    .box-val{font-size:22px;font-weight:700;color:#5b21b6}
+    .box-lbl{font-size:11px;color:#64748b}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px}
+    th{padding:8px;text-align:left;font-size:11px;border-bottom:2px solid #e2e8f0;color:#475569}
+    td{padding:7px 8px;border-bottom:1px solid #f1f5f9;font-size:11px}
+    .sec{font-size:13px;font-weight:700;margin:12px 0 6px;color:#374151}
+    .ok{color:#065f46;font-weight:700} .bad{color:#dc2626;font-weight:700}
+    .footer{margin-top:16px;font-size:10px;color:#94a3b8}
+  </style></head><body>
+  <h1>Lista de Presença — ${HOSPITAL.nome}</h1>
+  <h2>Data: ${d}/${m}/${y}</h2>
+  <div class="resumo">
+    <div class="box"><div class="box-val ok">${presentes.length}</div><div class="box-lbl">Presenças</div></div>
+    <div class="box"><div class="box-val bad">${faltas.length}</div><div class="box-lbl">Faltas</div></div>
+    <div class="box"><div class="box-val" style="color:#065f46">${totalH}h</div><div class="box-lbl">Total horas</div></div>
+  </div>`;
+  if(presentes.length){
+    html+=`<div class="sec">✅ Presentes (${presentes.length})</div>
+    <table><thead><tr><th>Aluno</th><th>Preceptor</th><th>Setor</th><th>Turno</th><th>Horas</th></tr></thead><tbody>`;
+    presentes.forEach(r=>{html+=`<tr><td>${r[ak]?.nome||'—'}</td><td>${r[ak]?.turma||'—'}</td><td>${r[ck]?.nome||'—'}</td><td>${r.turno}</td><td class="ok">${horasPorTurno(r.turno)}h</td></tr>`;});
+    html+=`</tbody></table>`;
+  }
+  if(faltas.length){
+    html+=`<div class="sec">❌ Faltas (${faltas.length})</div>
+    <table><thead><tr><th>Aluno</th><th>Preceptor</th><th>Setor</th><th>Turno</th><th>Justificativa</th></tr></thead><tbody>`;
+    faltas.forEach(r=>{html+=`<tr><td>${r[ak]?.nome||'—'}</td><td>${r[ak]?.turma||'—'}</td><td>${r[ck]?.nome||'—'}</td><td>${r.turno}</td><td class="bad">${r.observacao||'—'}</td></tr>`;});
+    html+=`</tbody></table>`;
+  }
+  html+=`<div class="footer">Sistema de Presença — PROZ Educação Uberlândia</div></body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();w.print();
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────
+let DASH_HOSP='todos';
+
+async function loadDashboard(hosp){
+  DASH_HOSP=hosp;
+  ['todos','clara','genoveva'].forEach(h=>{
+    document.getElementById('dtab-'+h).classList.toggle('active',h===hosp);
+  });
+  const hoje=new Date();
+  const dataHoje=hoje.toISOString().split('T')[0];
+  const[d,m,y]=[String(hoje.getDate()).padStart(2,'0'),String(hoje.getMonth()+1).padStart(2,'0'),hoje.getFullYear()];
+  document.getElementById('dash-data-hoje').textContent=`${d}/${m}/${y}`;
+
+  const hosps=hosp==='todos'?Object.keys(HOSPITAIS):[hosp];
+  let totalAlunos=0,totalP=0,totalF=0,totalH=0;
+  let hojeRows=[];
+
+  for(const h of hosps){
+    const pref=HOSPITAIS[h].prefixo;
+    const nome=HOSPITAIS[h].nome;
+    const{data:alunos}=await sb.from(pref+'alunos').select('*');
+    const{data:regs}=await sb.from(pref+'registros_presenca').select('*');
+    const ak=pref+'alunos';const ck=pref+'campos_estagio';
+    const{data:hojeRegs}=await sb.from(pref+'registros_presenca').select(`*, ${ak}(nome,turma), ${ck}(nome)`).eq('data',dataHoje);
+
+    totalAlunos+=(alunos||[]).length;
+    totalP+=(regs||[]).filter(r=>r.situacao==='P').length;
+    totalF+=(regs||[]).filter(r=>r.situacao==='F').length;
+    totalH+=(regs||[]).filter(r=>r.situacao==='P').reduce((acc,r)=>acc+horasPorTurno(r.turno),0);
+
+    (hojeRegs||[]).forEach(r=>{
+      hojeRows.push({...r,_hosp:nome,ak,ck});
+    });
+  }
+
+  document.getElementById('dm-alunos').textContent=totalAlunos;
+  document.getElementById('dm-presencas').textContent=totalP;
+  document.getElementById('dm-faltas').textContent=totalF;
+  document.getElementById('dm-horas').textContent=totalH+'h';
+
+  // Presenças hoje
+  const divHoje=document.getElementById('dash-hoje');
+  if(!hojeRows.length){divHoje.innerHTML='<div class="empty">Nenhum registro lançado hoje ainda.</div>';}
+  else{
+    const badges={P:'<span class="badge badge-p">Presente</span>',F:'<span class="badge badge-f">Ausente</span>'};
+    let h=`<table><thead><tr><th>Hospital</th><th>Aluno</th><th>Preceptor</th><th>Setor</th><th>Turno</th><th>Situação</th></tr></thead><tbody>`;
+    hojeRows.forEach(r=>{
+      h+=`<tr><td style="color:#5b21b6;font-weight:600">${r._hosp}</td><td>${r[r.ak]?.nome||'—'}</td><td>${r[r.ak]?.turma||'—'}</td><td>${r[r.ck]?.nome||'—'}</td><td>${r.turno}</td><td>${badges[r.situacao]||r.situacao}</td></tr>`;
+    });
+    h+='</tbody></table>';
+    divHoje.innerHTML=h;
+  }
+
+  // Ranking horas
+  await loadDashboardRanking(hosps);
+}
+
+async function loadDashboardRanking(hosps){
+  const ranking=[];
+  for(const h of hosps){
+    const pref=HOSPITAIS[h].prefixo;
+    const nome=HOSPITAIS[h].nome;
+    const{data:alunos}=await sb.from(pref+'alunos').select('*').order('nome');
+    const{data:regs}=await sb.from(pref+'registros_presenca').select('*');
+    (alunos||[]).forEach(a=>{
+      const r=(regs||[]).filter(x=>x.aluno_id===a.id&&x.situacao==='P');
+      const horas=r.reduce((acc,x)=>acc+horasPorTurno(x.turno),0);
+      ranking.push({nome:a.nome,hospital:nome,horas,presencas:r.length});
+    });
+  }
+  ranking.sort((a,b)=>b.horas-a.horas);
+  const div=document.getElementById('dash-ranking');
+  if(!ranking.length){div.innerHTML='<div class="empty">Nenhum dado disponível.</div>';return;}
+  let h=`<table><thead><tr><th>#</th><th>Aluno</th><th>Hospital</th><th>Presenças</th><th>Horas</th></tr></thead><tbody>`;
+  ranking.slice(0,20).forEach((a,i)=>{
+    const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1;
+    h+=`<tr><td style="font-weight:700">${medal}</td><td style="font-weight:600">${a.nome}</td><td style="color:#5b21b6">${a.hospital}</td><td>${a.presencas}</td><td style="color:#065f46;font-weight:700">${a.horas}h</td></tr>`;
+  });
+  h+='</tbody></table>';
+  div.innerHTML=h;
+}
+
+async function loadDashboardData(){
+  const data=document.getElementById('dash-data-sel').value;
+  if(!data)return;
+  const div=document.getElementById('dash-data-result');
+  div.innerHTML='<div class="empty">Carregando...</div>';
+  const hosps=DASH_HOSP==='todos'?Object.keys(HOSPITAIS):[DASH_HOSP];
+  const badges={P:'<span class="badge badge-p">Presente</span>',F:'<span class="badge badge-f">Ausente</span>'};
+  let rows=[];
+  for(const h of hosps){
+    const pref=HOSPITAIS[h].prefixo;
+    const nome=HOSPITAIS[h].nome;
+    const ak=pref+'alunos';const ck=pref+'campos_estagio';
+    const{data:regs}=await sb.from(pref+'registros_presenca').select(`*, ${ak}(nome,turma), ${ck}(nome)`).eq('data',data).order('id');
+    (regs||[]).forEach(r=>rows.push({...r,_hosp:nome,ak,ck}));
+  }
+  if(!rows.length){div.innerHTML='<div class="empty">Nenhum registro nesta data.</div>';return;}
+  let h=`<table><thead><tr><th>Hospital</th><th>Aluno</th><th>Preceptor</th><th>Setor</th><th>Turno</th><th>Horas</th><th>Situação</th><th>Observação</th></tr></thead><tbody>`;
+  rows.forEach(r=>{
+    const horas=r.situacao==='P'?horasPorTurno(r.turno):0;
+    h+=`<tr><td style="color:#5b21b6;font-weight:600">${r._hosp}</td><td>${r[r.ak]?.nome||'—'}</td><td>${r[r.ak]?.turma||'—'}</td><td>${r[r.ck]?.nome||'—'}</td><td>${r.turno}</td><td style="color:#065f46;font-weight:600">${horas}h</td><td>${badges[r.situacao]}</td><td style="color:#64748b;font-size:12px">${r.observacao||'—'}</td></tr>`;
+  });
+  h+='</tbody></table>';
+  div.innerHTML=h;
+}
+
 async function exportExcel(){
   if(!sb)return;
   showAlert('Gerando planilha...','info');
