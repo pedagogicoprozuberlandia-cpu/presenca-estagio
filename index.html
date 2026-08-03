@@ -618,6 +618,54 @@ tr:hover td{background:#f8fafc}
   </div>
 </div>
 
+<!-- EDIT REGISTRO MODAL -->
+<div class="overlay" id="edit-reg-overlay">
+  <div class="modal" style="width:500px">
+    <div class="modal-title">✏️ Editar registro</div>
+    <input type="hidden" id="edit-reg-id"/>
+    <div class="form-grid three" style="margin-bottom:14px">
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" id="edit-reg-data"/>
+      </div>
+      <div class="form-group" style="grid-column:span 2">
+        <label>Turno</label>
+        <div style="display:flex;gap:8px;margin-top:2px">
+          <button class="turno-btn" onclick="setEditTurno('Manhã')" id="eturno-Manhã">🌅 Manhã</button>
+          <button class="turno-btn" onclick="setEditTurno('Tarde')" id="eturno-Tarde">🌤️ Tarde</button>
+          <button class="turno-btn" onclick="setEditTurno('Noite')" id="eturno-Noite">🌙 Noite</button>
+        </div>
+        <input type="hidden" id="edit-reg-turno"/>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Situação</label>
+      <div class="sit-btns">
+        <button class="sit-btn presente" onclick="setEditSituacao('P')" id="esit-P"><span class="sit-icon">✅</span>Presente</button>
+        <button class="sit-btn ausente" onclick="setEditSituacao('F')" id="esit-F"><span class="sit-icon">❌</span>Ausente</button>
+      </div>
+      <input type="hidden" id="edit-reg-situacao"/>
+    </div>
+    <div class="form-group" style="margin-bottom:20px" id="edit-reg-obs-wrap">
+      <label>Justificativa</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px" id="edit-just-btns">
+        <button class="just-btn" onclick="setEditJust('Atestado médico')">🏥 Atestado médico</button>
+        <button class="just-btn" onclick="setEditJust('Falta sem justificativa')">❌ Falta sem justificativa</button>
+        <button class="just-btn" onclick="setEditJust('Falta de transporte da cidade de origem')">🚌 Falta de transporte da cidade de origem</button>
+        <button class="just-btn" onclick="setEditJust('outros')">✏️ Outros</button>
+      </div>
+      <div id="edit-obs-livre" style="display:none">
+        <textarea id="edit-reg-obs" placeholder="Descreva o motivo..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;min-height:60px;resize:vertical"></textarea>
+      </div>
+      <input type="hidden" id="edit-reg-obs-val"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="document.getElementById('edit-reg-overlay').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditRegistro()" id="btn-save-reg">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT ALUNO MODAL -->
 <div class="overlay" id="edit-aluno-overlay">
   <div class="modal" style="width:460px">
@@ -1359,7 +1407,10 @@ async function loadRegistros(){
       <td style="color:#065f46;font-weight:600">${horas}h</td>
       <td>${badges[r.situacao]||r.situacao}</td>
       <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b">${r.observacao||'—'}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="removeRegistro(${r.id})">✕</button></td>
+      <td style="display:flex;gap:4px">
+        <button class="btn btn-secondary btn-sm" onclick="openEditRegistro(${r.id},'${r.data}','${r.turno||''}','${r.situacao}','${(r.observacao||'').replace(/'/g,"\\'")}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="removeRegistro(${r.id})">✕</button>
+      </td>
     </tr>`;
   });
   if(fAluno){
@@ -1371,6 +1422,80 @@ async function loadRegistros(){
   }
   h+='</tbody></table>';
   div.innerHTML=h;
+}
+
+function setEditTurno(val){
+  document.getElementById('edit-reg-turno').value=val;
+  ['Manhã','Tarde','Noite'].forEach(t=>document.getElementById('eturno-'+t).classList.toggle('selected',t===val));
+}
+
+function setEditSituacao(val){
+  document.getElementById('edit-reg-situacao').value=val;
+  document.getElementById('esit-P').classList.toggle('selected',val==='P');
+  document.getElementById('esit-F').classList.toggle('selected',val==='F');
+  document.getElementById('edit-reg-obs-wrap').style.display=val==='F'?'block':'none';
+}
+
+function setEditJust(val){
+  document.querySelectorAll('#edit-just-btns .just-btn').forEach(b=>b.classList.remove('selected'));
+  event.target.classList.add('selected');
+  if(val==='outros'){
+    document.getElementById('edit-obs-livre').style.display='block';
+    document.getElementById('edit-reg-obs-val').value='';
+  }else{
+    document.getElementById('edit-obs-livre').style.display='none';
+    document.getElementById('edit-reg-obs-val').value=val;
+  }
+}
+
+function openEditRegistro(id,data,turno,situacao,obs){
+  document.getElementById('edit-reg-id').value=id;
+  document.getElementById('edit-reg-data').value=data;
+  setEditTurno(turno);
+  setEditSituacao(situacao);
+  // set justificativa
+  const justBtns=['Atestado médico','Falta sem justificativa','Falta de transporte da cidade de origem'];
+  document.querySelectorAll('#edit-just-btns .just-btn').forEach(b=>b.classList.remove('selected'));
+  if(justBtns.includes(obs)){
+    document.getElementById('edit-reg-obs-val').value=obs;
+    document.getElementById('edit-obs-livre').style.display='none';
+    document.querySelectorAll('#edit-just-btns .just-btn').forEach(b=>{
+      if(b.onclick.toString().includes(obs)) b.classList.add('selected');
+    });
+  }else if(obs&&obs!=='—'){
+    document.getElementById('edit-reg-obs-val').value='';
+    document.getElementById('edit-obs-livre').style.display='block';
+    document.getElementById('edit-reg-obs').value=obs;
+    // mark outros button
+    document.querySelectorAll('#edit-just-btns .just-btn').forEach(b=>{
+      if(b.textContent.includes('Outros')) b.classList.add('selected');
+    });
+  }else{
+    document.getElementById('edit-reg-obs-val').value='';
+    document.getElementById('edit-obs-livre').style.display='none';
+    document.getElementById('edit-reg-obs').value='';
+  }
+  document.getElementById('edit-reg-overlay').classList.add('open');
+}
+
+async function saveEditRegistro(){
+  const id=document.getElementById('edit-reg-id').value;
+  const data=document.getElementById('edit-reg-data').value;
+  const turno=document.getElementById('edit-reg-turno').value;
+  const situacao=document.getElementById('edit-reg-situacao').value;
+  const obsVal=document.getElementById('edit-reg-obs-val').value;
+  const obsLivre=document.getElementById('edit-reg-obs')?.value?.trim()||'';
+  const observacao=obsVal||obsLivre||null;
+  if(!data||!turno||!situacao){showAlert('Preencha todos os campos obrigatórios.','error');return;}
+  if(situacao==='F'&&!observacao){showAlert('Selecione a justificativa para ausência.','error');return;}
+  const btn=document.getElementById('btn-save-reg');
+  btn.innerHTML='<span class="spinner"></span> Salvando...';btn.disabled=true;
+  const{error}=await sb.from(tbl('registros_presenca')).update({data,turno,situacao,observacao}).eq('id',id);
+  btn.innerHTML='Salvar alterações';btn.disabled=false;
+  if(error){showAlert('Erro: '+error.message,'error');return;}
+  document.getElementById('edit-reg-overlay').classList.remove('open');
+  loadRegistros();
+  showAlert('Registro atualizado com sucesso!');
 }
 
 async function removeRegistro(id){
