@@ -915,12 +915,14 @@ function clearAcdError(id){
   const el=document.getElementById('acd-'+id);
   if(el)el.classList.remove('acd-error');
 }
-function horasPorTurno(turno){
-  if(turno==='Manhã') return 5;
-  if(turno==='Tarde') return 5;
-  if(turno==='Noite') return 4;
-  
-  return 5;
+function horasPorTurno(turno, dataStr){
+  // A partir de 07/08/2026: Manhã=6h, Tarde=6h, Noite=5h
+  // Antes: Manhã=5h, Tarde=5h, Noite=4h
+  const novaRegra = dataStr && dataStr >= '2026-08-07';
+  if(turno==='Manhã') return novaRegra ? 6 : 5;
+  if(turno==='Tarde') return novaRegra ? 6 : 5;
+  if(turno==='Noite') return novaRegra ? 5 : 4;
+  return novaRegra ? 6 : 5;
 }
 
 function deveAparecerHoje(aluno, dataStr){
@@ -1485,7 +1487,7 @@ async function loadRegistros(){
   let h=`<table><thead><tr><th>Data</th><th>Aluno</th><th>Preceptor</th><th>Setor</th><th>Turno</th><th>Horas</th><th>Situação</th><th>Observação</th><th></th></tr></thead><tbody>`;
   data.forEach(r=>{
     const[y,m,d]=r.data.split('-');
-    const horas=r.situacao==='P'?horasPorTurno(r.turno):0;
+    const horas=r.situacao==='P'?horasPorTurno(r.turno, r.data):0;
     totalHoras+=horas;
     h+=`<tr>
       <td>${d}/${m}/${y}</td>
@@ -1616,7 +1618,7 @@ async function loadRelatorio(){
     const p=r.filter(x=>x.situacao==='P').length;
     const f=r.filter(x=>x.situacao==='F').length;
     const tot=r.length;
-    const horas=r.filter(x=>x.situacao==='P').reduce((acc,x)=>acc+horasPorTurno(x.turno),0);
+    const horas=r.filter(x=>x.situacao==='P').reduce((acc,x)=>acc+horasPorTurno(x.turno, x.data),0);
     const freq=tot?Math.round(p/tot*100):0;
     const cor=freq>=75?'#5b21b6':freq>=50?'#92400e':'#991b1b';
     totalP+=p;totalF+=f;totalH+=horas;
@@ -1723,7 +1725,7 @@ async function buscarAluno(){
       for(const a of alunos){
         const{data:regs}=await sb.from(prefixo+'registros_presenca').select('*');
         const p=(regs||[]).filter(r=>r.aluno_id===a.id&&r.situacao==='P').length;
-        const horas=(regs||[]).filter(r=>r.aluno_id===a.id&&r.situacao==='P').reduce((acc,r)=>acc+horasPorTurno(r.turno),0);
+        const horas=(regs||[]).filter(r=>r.aluno_id===a.id&&r.situacao==='P').reduce((acc,r)=>acc+horasPorTurno(r.turno, r.data),0);
         // só mostra alunos do hospital atual
         if(hosp===HOSPITAL.id) resultados.push({aluno:a,p,horas,prefixo});
       }
@@ -1849,7 +1851,7 @@ async function exportPDFRelatorio(){
     const r=(regs||[]).filter(x=>x.aluno_id===a.id);
     const p=r.filter(x=>x.situacao==='P').length;
     const f=r.filter(x=>x.situacao==='F').length;
-    const h=r.filter(x=>x.situacao==='P').reduce((acc,x)=>acc+horasPorTurno(x.turno),0);
+    const h=r.filter(x=>x.situacao==='P').reduce((acc,x)=>acc+horasPorTurno(x.turno, x.data),0);
     const freq=r.length?Math.round(p/r.length*100):0;
     html+=`<tr><td>${a.nome}</td><td>${a.turma||'—'}</td><td>${a.campo||'—'}</td><td>${a.setor_fixo||'—'}</td>
     <td class="ok">${p}</td><td class="bad">${f}</td><td class="ok">${h}h</td>
@@ -1869,7 +1871,7 @@ async function exportPDFData(){
   const[d,m,y]=[data.split('-')[2],data.split('-')[1],data.split('-')[0]];
   const presentes=(regs||[]).filter(r=>r.situacao==='P');
   const faltas=(regs||[]).filter(r=>r.situacao==='F');
-  const totalH=presentes.reduce((acc,r)=>acc+horasPorTurno(r.turno),0);
+  const totalH=presentes.reduce((acc,r)=>acc+horasPorTurno(r.turno, r.data),0);
   let html=`<html><head><meta charset="UTF-8"/>
   <style>
     body{font-family:Arial,sans-serif;font-size:12px;color:#1a202c;margin:24px}
@@ -1896,7 +1898,7 @@ async function exportPDFData(){
   if(presentes.length){
     html+=`<div class="sec">✅ Presentes (${presentes.length})</div>
     <table><thead><tr><th>Aluno</th><th>Preceptor</th><th>Setor</th><th>Turno</th><th>Horas</th></tr></thead><tbody>`;
-    presentes.forEach(r=>{html+=`<tr><td>${r[ak]?.nome||'—'}</td><td>${r[ak]?.turma||'—'}</td><td>${r[ck]?.nome||'—'}</td><td>${r.turno}</td><td class="ok">${horasPorTurno(r.turno)}h</td></tr>`;});
+    presentes.forEach(r=>{html+=`<tr><td>${r[ak]?.nome||'—'}</td><td>${r[ak]?.turma||'—'}</td><td>${r[ck]?.nome||'—'}</td><td>${r.turno}</td><td class="ok">${horasPorTurno(r.turno, r.data)}h</td></tr>`;});
     html+=`</tbody></table>`;
   }
   if(faltas.length){
@@ -1937,7 +1939,7 @@ async function loadDashboard(hosp){
     totalAlunos+=(alunos||[]).length;
     totalP+=(regs||[]).filter(r=>r.situacao==='P').length;
     totalF+=(regs||[]).filter(r=>r.situacao==='F').length;
-    totalH+=(regs||[]).filter(r=>r.situacao==='P').reduce((acc,r)=>acc+horasPorTurno(r.turno),0);
+    totalH+=(regs||[]).filter(r=>r.situacao==='P').reduce((acc,r)=>acc+horasPorTurno(r.turno, r.data),0);
 
     (hojeRegs||[]).forEach(r=>{
       hojeRows.push({...r,_hosp:nome,ak,ck});
@@ -1975,7 +1977,7 @@ async function loadDashboardRanking(hosps){
     const{data:regs}=await sb.from(pref+'registros_presenca').select('*');
     (alunos||[]).forEach(a=>{
       const r=(regs||[]).filter(x=>x.aluno_id===a.id&&x.situacao==='P');
-      const horas=r.reduce((acc,x)=>acc+horasPorTurno(x.turno),0);
+      const horas=r.reduce((acc,x)=>acc+horasPorTurno(x.turno, x.data),0);
       ranking.push({nome:a.nome,hospital:nome,horas,presencas:r.length});
     });
   }
@@ -2009,7 +2011,7 @@ async function loadDashboardData(){
   if(!rows.length){div.innerHTML='<div class="empty">Nenhum registro nesta data.</div>';return;}
   let h=`<table><thead><tr><th>Hospital</th><th>Aluno</th><th>Preceptor</th><th>Setor</th><th>Turno</th><th>Horas</th><th>Situação</th><th>Observação</th></tr></thead><tbody>`;
   rows.forEach(r=>{
-    const horas=r.situacao==='P'?horasPorTurno(r.turno):0;
+    const horas=r.situacao==='P'?horasPorTurno(r.turno, r.data):0;
     h+=`<tr><td style="color:#5b21b6;font-weight:600">${r._hosp}</td><td>${r[r.ak]?.nome||'—'}</td><td>${r[r.ak]?.turma||'—'}</td><td>${r[r.ck]?.nome||'—'}</td><td>${r.turno}</td><td style="color:#065f46;font-weight:600">${horas}h</td><td>${badges[r.situacao]}</td><td style="color:#64748b;font-size:12px">${r.observacao||'—'}</td></tr>`;
   });
   h+='</tbody></table>';
@@ -2028,7 +2030,7 @@ async function exportExcel(){
   const rows=regs.map(r=>{
     const[y,m,d]=r.data.split('-');
     const campoNome=r[ck]?.nome||r[ak]?.setor_fixo||'';
-    const horas=r.situacao==='P'?horasPorTurno(r.turno):0;
+    const horas=r.situacao==='P'?horasPorTurno(r.turno, r.data):0;
     return{
       'Hospital':HOSPITAL.nome,
       'Data':`${d}/${m}/${y}`,
@@ -2050,7 +2052,7 @@ async function exportExcel(){
     const p=r.filter(x=>x.situacao==='P').length;
     const f=r.filter(x=>x.situacao==='F').length;
     const tot=r.length;
-    const horas=r.filter(x=>x.situacao==='P').reduce((acc,x)=>acc+horasPorTurno(x.turno),0);
+    const horas=r.filter(x=>x.situacao==='P').reduce((acc,x)=>acc+horasPorTurno(x.turno, x.data),0);
     return{
       'Hospital':HOSPITAL.nome,
       'Aluno':a.nome,
