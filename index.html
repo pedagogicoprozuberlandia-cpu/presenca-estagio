@@ -929,12 +929,31 @@ function deveAparecerHoje(aluno, dataStr){
   if(!aluno.escala || aluno.escala==='todos') return true;
   const data = dataStr ? new Date(dataStr+'T12:00:00') : new Date();
   const dia = data.getDate();
-  const mes = data.getMonth();
+  const mes = data.getMonth(); // 0-11
   const ano = data.getFullYear();
-  const diasMesAnterior = new Date(ano, mes, 0).getDate();
-  const trocou = diasMesAnterior === 31;
+
+  // Mês de referência: agosto/2026 (mês 7 no JS = índice 0)
+  const refAno = 2026;
+  const refMes = 7; // agosto
+
+  // Contar quantas inversões aconteceram desde agosto/2026
+  // Cada mês com 31 dias causa uma inversão no mês seguinte
+  let inversoes = 0;
+  let aAno = refAno;
+  let aMes = refMes;
+
+  while(aAno < ano || (aAno === ano && aMes < mes)){
+    // quantos dias tem este mês (aMes/aAno)?
+    const diasMes = new Date(aAno, aMes + 1, 0).getDate();
+    if(diasMes === 31) inversoes++;
+    aMes++;
+    if(aMes > 11){ aMes = 0; aAno++; }
+  }
+
+  // se inversoes for ímpar, inverte a escala cadastrada
   let escalaMes = aluno.escala;
-  if(trocou) escalaMes = escalaMes === 'impar' ? 'par' : 'impar';
+  if(inversoes % 2 !== 0) escalaMes = escalaMes === 'impar' ? 'par' : 'impar';
+
   if(escalaMes === 'impar') return dia % 2 !== 0;
   if(escalaMes === 'par') return dia % 2 === 0;
   return true;
