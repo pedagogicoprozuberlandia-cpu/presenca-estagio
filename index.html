@@ -932,25 +932,20 @@ function deveAparecerHoje(aluno, dataStr){
   const mes = data.getMonth(); // 0-11
   const ano = data.getFullYear();
 
-  // Mês de referência: agosto/2026 (mês 7 no JS = índice 0)
-  const refAno = 2026;
-  const refMes = 7; // agosto
-
-  // Contar quantas inversões aconteceram desde agosto/2026
-  // Cada mês com 31 dias causa uma inversão no mês seguinte
+  // Mês de referência: agosto/2026 = mês 7 (0-11)
+  // Contar inversões a partir de setembro (mês seguinte ao de referência)
   let inversoes = 0;
-  let aAno = refAno;
-  let aMes = refMes;
+  let aAno = 2026;
+  let aMes = 8; // setembro = 8 (0-11) — começa DEPOIS de agosto
 
-  while(aAno < ano || (aAno === ano && aMes < mes)){
-    // quantos dias tem este mês (aMes/aAno)?
-    const diasMes = new Date(aAno, aMes + 1, 0).getDate();
-    if(diasMes === 31) inversoes++;
+  while(aAno < ano || (aAno === ano && aMes <= mes)){
+    // dias do mês ANTERIOR ao atual (que causou a inversão)
+    const diasMesAnterior = new Date(aAno, aMes, 0).getDate();
+    if(diasMesAnterior === 31) inversoes++;
     aMes++;
     if(aMes > 11){ aMes = 0; aAno++; }
   }
 
-  // se inversoes for ímpar, inverte a escala cadastrada
   let escalaMes = aluno.escala;
   if(inversoes % 2 !== 0) escalaMes = escalaMes === 'impar' ? 'par' : 'impar';
 
