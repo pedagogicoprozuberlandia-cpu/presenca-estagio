@@ -1127,7 +1127,10 @@ function renderAlunosFiltrados(){
   if(filtro) lista=lista.filter(a=>a.nome.toLowerCase().includes(filtro.toLowerCase()));
   // filtrar por escala (ímpar/par) — ignorar se for reposição
   const dataReg=document.getElementById('r-data')?.value||new Date().toISOString().split('T')[0];
-  console.log('dataReg:', dataReg); // debug
+  console.log('=== FILTRO ESCALA ===');
+  console.log('dataReg:', dataReg);
+  console.log('MOSTRAR_TODOS:', MOSTRAR_TODOS);
+  lista.forEach(a=>console.log(a.nome, '| escala:', a.escala, '| aparece:', deveAparecerHoje(a, dataReg)));
   if(!MOSTRAR_TODOS) lista=lista.filter(a=>deveAparecerHoje(a, dataReg));
   // esconder alunos já lançados hoje
   lista=lista.filter(a=>!ALUNOS_LANCADOS.has(a.id));
