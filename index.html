@@ -706,6 +706,19 @@ tr:hover td{background:#f8fafc}
   </div>
 </div>
 
+<!-- RESUMO MODAL -->
+<div class="overlay" id="resumo-overlay">
+  <div class="modal" style="width:480px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">📋 Resumo do lançamento</div>
+    <div id="resumo-content"></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn btn-primary" onclick="document.getElementById('resumo-overlay').classList.remove('open')" style="width:100%">
+        ✓ Fechar
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT REGISTRO MODAL -->
 <div class="overlay" id="edit-reg-overlay">
   <div class="modal" style="width:500px">
@@ -1231,6 +1244,37 @@ function setTurno(val){
 // IDs dos alunos já lançados hoje
 let ALUNOS_LANCADOS=new Set();
 
+function mostrarResumo(data, turno, preceptor, situacao, observacao, alunos, erros){
+  const[y,m,d]=data.split('-');
+  const dataFmt=`${d}/${m}/${y}`;
+  const sit=situacao==='P'?'✅ Presente':'❌ Ausente';
+  const cor=situacao==='P'?'#065f46':'#991b1b';
+  const bg=situacao==='P'?'#d1fae5':'#fee2e2';
+  const horas=horasPorTurno(turno, data);
+
+  let html=`
+    <div style="margin-bottom:16px;padding:14px;background:${bg};border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:4px">${situacao==='P'?'✅':'❌'}</div>
+      <div style="font-size:16px;font-weight:700;color:${cor}">${sit}</div>
+      ${situacao==='P'?`<div style="font-size:13px;color:${cor};margin-top:2px">${horas}h por aluno</div>`:''}
+      ${observacao?`<div style="font-size:12px;color:${cor};margin-top:4px;font-style:italic">${observacao}</div>`:''}
+    </div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:10px">
+      📅 <strong>${dataFmt}</strong> &nbsp;·&nbsp; 
+      ${turno==='Manhã'?'🌅':''}${turno==='Tarde'?'🌤️':''}${turno==='Noite'?'🌙':''} <strong>${turno}</strong> &nbsp;·&nbsp;
+      👤 <strong>${preceptor}</strong>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px">${alunos.length} aluno(s) lançado(s):</div>
+    <div style="max-height:200px;overflow-y:auto">
+      ${alunos.map(n=>`<div style="padding:7px 12px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:5px;font-size:13px;font-weight:600;color:#1a202c">${n}</div>`).join('')}
+    </div>
+    ${erros>0?`<div style="margin-top:10px;font-size:12px;color:#92400e;background:#fef3c7;padding:8px 12px;border-radius:8px">⚠️ ${erros} aluno(s) já tinham registro nesta data e foram ignorados.</div>`:''}
+  `;
+
+  document.getElementById('resumo-content').innerHTML=html;
+  document.getElementById('resumo-overlay').classList.add('open');
+}
+
 async function carregarLancadosHoje(){
   ALUNOS_LANCADOS.clear();
   if(!sb)return;
@@ -1249,6 +1293,7 @@ async function addRegistro(){
   const turno=document.getElementById('r-turno').value;
   const situacao=document.getElementById('r-situacao').value;
   const observacao=getObservacao();
+  const preceptor=document.getElementById('r-preceptor-sel').value;
   // limpar erros anteriores
   ['fg-data','fg-turno'].forEach(clearError);
   ['preceptor','aluno'].forEach(clearAcdError);
@@ -1257,23 +1302,27 @@ async function addRegistro(){
   if(!data){showFieldError('fg-data','Informe a data');valido=false;}
   if(!turno){showFieldError('fg-turno','Selecione o turno');valido=false;}
   if(!ALUNOS_SEL.size){showAcdError('aluno');showAlert('Selecione pelo menos um aluno.','error');valido=false;}
-  if(!document.getElementById('r-preceptor-sel').value){showAcdError('preceptor');if(valido)showAlert('Selecione o preceptor.','error');valido=false;}
+  if(!preceptor){showAcdError('preceptor');if(valido)showAlert('Selecione o preceptor.','error');valido=false;}
   if(!situacao){showAlert('Marque a situação: Presente ou Ausente.','error');valido=false;}
   if(situacao==='F'&&!observacao){showAlert('Selecione a justificativa da ausência.','error');valido=false;}
   if(!valido)return;
+
   const btn=document.getElementById('btn-add-reg');
   btn.innerHTML='<span class="spinner"></span> Salvando...';btn.disabled=true;
+
+  // guardar nomes dos alunos para o resumo
+  const alunosLancados=[];
   let ok=0;let erros=0;
   for(const aluno_id of ALUNOS_SEL){
     const{data:dup}=await sb.from(tbl('registros_presenca')).select('id').eq('aluno_id',aluno_id).eq('data',data);
     if(dup?.length){erros++;continue;}
-    // usar setor_fixo do próprio aluno como campo
     const aluno=ALUNOS.find(a=>a.id===aluno_id);
     const campoObj=CAMPOS.find(c=>c.nome===aluno?.setor_fixo);
     const campo_id=campoObj?.id||null;
     const{error}=await sb.from(tbl('registros_presenca')).insert({aluno_id,campo_id,data,turno,situacao,observacao:observacao||null});
-    if(error){erros++;}else{ok++;ALUNOS_LANCADOS.add(aluno_id);}
+    if(error){erros++;}else{ok++;ALUNOS_LANCADOS.add(aluno_id);alunosLancados.push(aluno?.nome||'—');}
   }
+
   btn.innerHTML='<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Registrar presença';
   btn.disabled=false;
   ALUNOS_SEL.clear();
@@ -1288,9 +1337,9 @@ async function addRegistro(){
   await carregarLancadosHoje();
   updateAcd();
   loadRegistros();
-  if(erros>0&&ok===0){showAlert(`Todos os aluno(s) já têm registro nesta data.`,'error');}
-  else if(erros>0){showAlert(`${ok} presença(s) registrada(s)! ${erros} já tinham registro nesta data.`);}
-  else{showAlert(`${ok} presença(s) registrada(s) com sucesso!`);}
+
+  if(ok>0) mostrarResumo(data, turno, preceptor, situacao, observacao, alunosLancados, erros);
+  else if(erros>0) showAlert('Todos os alunos já têm registro nesta data.','error');
 }
 
 async function addAluno(){
